@@ -64,9 +64,8 @@ Same as above, but instead of adding an `OffsetManagerNetworking` to the Network
 
 ## Performance considerations
 
-- This package scales generally linearly with evenly distributed players but if all your players cluster in one place performance can dip. See the benchmarks for more details.
+- This package scales generally ~~linearly~~ (currently polynomial worst case, unsure if this is avoidable because we unfortunately need to run nearest neighbor search) with evenly distributed players but if all your players cluster in one place performance can dip. See the benchmarks for more details.
 - The OffsetManager class is still being optimized. If you can reduce the number of root GameObjects in your scenes that should improve peformance.
-
 
 ---
 
