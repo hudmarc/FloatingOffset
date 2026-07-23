@@ -67,11 +67,11 @@ Same as above, but instead of adding an `OffsetManagerNetworking` to the Network
 
 ---
 
-## OffsetScene (struct)
+## OffsetScene
 
 You can think of an offset scene as a normal Unity scene with a particular offset from 0,0,0 represented in 64-bit doubles. The point of this package is to keep all players as close to the centers of their scenes as possible, and it does this using a variety of algorithms and datastructures.
 
-At a low level this is a lightweight data struct holding the offset of a particular scene and a count of the OffsetTransforms within the scene. It is a core datatype for the offset system, used by the OffsetServer.
+These are implemented in the OffsetServer as collections, you can view the offset of a given scene in the Editor when you have an OffsetTransform or OffsetAnchor selected. If you need to see the offset of a scene in code you can do this with `Vector3d GetSceneOffset(Scene scene)` (currently this is located on OffsetServer but will be moved, update to follow soon)
 
 ## OffsetManager
 
@@ -79,11 +79,11 @@ Implements Unity functions on behalf of the OffsetServer.
 
 Bootstraps the OffsetServer.
 
-Default update mode is Unity, can also be Custom. There is also a derived class OffsetManagerFishNet that overrides the setup and updates subscribed to the FishNet OnTick and also handles network synchronisation for clients (default is first View spawned by the client is considered the player, but methods are provided to change the View registered for any given player)
+Default update mode is Unity, can also be Custom. There is also an OffsetManagerFishNet that overrides the setup and updates subscribed to the FishNet OnTick and also handles network synchronisation for clients (default is first View spawned by the client is considered the local player, but methods are provided to change the View registered for any given player)
 
 See also `OffsetManagerNetworking`
 
-## OffsetSceneNetworking
+## OffsetManagerNetworking
 
 Same as the OffsetManager but it uses the update loop from FishNet instead of the internal Unity update loops.
 
@@ -91,28 +91,27 @@ Same as the OffsetManager but it uses the update loop from FishNet instead of th
 
 Implements the low level logic of this package. The core logic of this package could in the future be ported to Godot or another C# engine, and in the meantime this class is very testable.
 
-The Offset Server essentially manages the pooling of Offset Scenes and the transfer of Offset Transforms between all active Offset Scenes and the null scene as well as keeping the scenes properly rebased. The Offset Server is not actually a Monobehaviour so it is instantiated by the OffsetManager as a plain C# object and its instance lives on the OffsetUniverse.
-
+The Offset Server essentially manages the pooling of Offset Scenes and the transfer of Offset Transforms between all active Offset Scenes as well as keeping the scenes properly rebased. The Offset Server is not actually a Monobehaviour so it is instantiated by the OffsetManager as a plain C# object and its instance lives on the OffsetUniverse.
 
 ## OffsetTransform
 
-Should always be near the origin of the scene it is in.
+Will exist in the `OffsetScene` nearest its origin. If it is not near any OffsetScenes it will be destroyed. If you do not want an OffsetTransform to be destroyed (for example, a player or a super-important boss character in your game) you should mark `isView = true`. More details below.
 
 ### OffsetTransform.isView = true
 
-Attach an OffsetTransform set to isView to your player. The first player spawned on the server will be considered the local player. The first player spawned on clients that is owned by that client is considered the local player on clients and is used for determining when to send rebase commands to clients from the server.
+Attach an `OffsetTransform` with `isView = true` to your player. The first player spawned on the server will be considered the local player. The first player spawned on clients that is owned by that client is considered the local player on clients and is used for determining when to send rebase commands to clients from the server.
 
-When leaving the rebase area the OffsetScene will be rebased to the centroid of all OV's in the scene.
+The `OffsetScene` will be rebased to the centroid of all game objects with `OffsetTransform` and `isView = true` in the scene.
 
 Tracks the real position (relative to real zero) and the real velocity (in absolute space, relative to real zero velocity) of itself.
 
 ### OffsetAnchor
 
-Offset Anchors ensure that the object they are attached to are always at the exact position specified in the OffsetAnchor's target position. Great for things like POI's.
+Offset Anchors ensure that the object they are attached to are always at the exact position specified in the OffsetAnchor's target position. Great for things like cities or other POI's that need to exist at specific points in space. If you didn't use this you would notice that cities that exist very very far from the origin are not where you put them (for example, clipping into the terrain) because their native Unity position (which is a Vector3) is not precise enough to store their exact location.
 
 ## IgnoreOffset
 
-Marks an object as ignored by the Offset system, when a scene is rebased this object will not be moved. Great for terrains that need to stay near the origin but use some custom system to render themselves.
+Marks an object as ignored by the Offset system, when a scene is rebased this object will not be moved. Great for terrains that need to stay near the origin and use some custom system to render themselves. (for exmaple, offsetting the terrain by the scene offset, I'll port an example as soon as I can)
 
 ---
 
