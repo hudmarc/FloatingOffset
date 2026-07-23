@@ -42,6 +42,7 @@ Worst: 4.2ms @ 380 players
 Best: 0.45ms @ 60 players
 ```
 > Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 400 players on an actual Unity game with this package, please let me know!
+`Tested on 6-Core Mobile Core i7 (I7-9750H) @ 4.5Ghz Turbo Boost`
 
 ## Multiplayer Setup
 - Create an Offline Scene, this should have your FishNet `NetworkManager`, add the `OffsetManagerNetworking` component and untick Unity Physics if you want to use TimeManager physics.
