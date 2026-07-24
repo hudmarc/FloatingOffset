@@ -22,27 +22,27 @@ Assuming a 4ms frame budget and a midrange server (in other words, the same cost
 
 ### Benchmarks:
 
-> If players are in one spot (clustered, worst case)
+> If all players are in one spot (clustered, absolute worst case)
 ```
-MultipleViewsSameClientStressTestWorstCase (2.279s)
+MultipleViewsSameClientStressTestWorstCase (2.578s)
 ---
-Stopped at 380 players with simulated frametime 4ms.
-Average: 1.99035087719298ms
-Worst: 4.2ms @ 380 players
-Best: 0.45ms @ 60 players
+Stopped at 420 players with simulated frametime 4ms.
+Average: 2.02777777777778ms
+Worst: 4.06666666666667ms @ 420 players
+Best: 0.433333333333333ms @ 40 players
 ```
 
 > If players are spread out evenly (not clustered, average case)
 ```
-MultipleViewsSameClientStressTestSpreadOut (2.424s)
+MultipleViewsSameClientStressTestSpreadOut (4.803s)
 ---
-Stopped at 500 players with simulated frametime 4ms.
-Average: 1.598ms
-Worst: 4.45ms @ 500 players
-Best: 0.1ms @ 60 players
+Stopped at 1040 players with simulated frametime 4ms.
+Average: 1.52852564102564ms
+Worst: 4.15ms @ 1040 players
+Best: 0.05ms @ 40 players
 ```
 
-> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 400 players on an actual Unity game with this package, please let me know!
+> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 1000 players on an actual Unity game with this package, please let me know!
 
 `Tested on 6-Core Mobile Core i7 (I7-9750H) @ 4.5Ghz Turbo Boost`
 
