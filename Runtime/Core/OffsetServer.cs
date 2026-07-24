@@ -152,7 +152,7 @@ namespace FloatingOffset.Runtime
         }
         public void Process()
         {
-            stopwatch.Restart();
+            // stopwatch.Restart();
             union.Clear();
             // prune views scheduled for removal
             for (int i = 0; i < views.Count; i++)
@@ -167,7 +167,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
-            MarkTime(0);
+            // MarkTime(0);
             int view_count = views.Count;
 
             // prune unused empty scenes
@@ -177,11 +177,11 @@ namespace FloatingOffset.Runtime
                 handler.Unload(scenes.GetKeyAt(empty_index));
             }
 
-            MarkTime(1);
+            // MarkTime(1);
 
             EnsureCapacity(views.Count);
 
-            MarkTime(2);
+            // MarkTime(2);
             // Initialize caches
 
             view_positions = new Vector3d[view_count];
@@ -190,7 +190,7 @@ namespace FloatingOffset.Runtime
 
             union.EnsureCapacity(view_count);
 
-            MarkTime(3);
+            // MarkTime(3);
 
             for (int i = 0; i < view_count; i++)
             {
@@ -209,7 +209,7 @@ namespace FloatingOffset.Runtime
                 union_sums[i] = Vector3d.zero;
             }
 
-            MarkTime(4);
+            // MarkTime(4);
             // Populate union-find, compute offsets for unions
             for (int i = 0; i < view_count; i++)
             {
@@ -253,7 +253,7 @@ namespace FloatingOffset.Runtime
                 }
                 // MarkTime(13);//5.00868055555556E-05ms avg best, 0.000137934210526316ms avg worst
             }
-            MarkTime(5);
+            // MarkTime(5);
 
 
             // Aggregate data for each union
@@ -264,7 +264,7 @@ namespace FloatingOffset.Runtime
                 union_sums[rep] += view_positions[i];
             }
 
-            MarkTime(6);
+            // MarkTime(6);
 
             winners.Clear();
 
@@ -275,7 +275,7 @@ namespace FloatingOffset.Runtime
                 union_scene_tuples[i] = new ScenedUnion { scene_index = view_scene_indexes[i], representative = union.Find(i) };
             }
 
-            MarkTime(7);
+            // MarkTime(7);
             int current_scene = union_scene_tuples[0].scene_index;
             int current_union = union_scene_tuples[0].representative;
             int current_run_count = 1;
@@ -321,7 +321,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
-            MarkTime(8);
+            // MarkTime(8);
             // Resolve the Tail
             // Evaluate the final run that was active when the loop ended
             if (current_run_count > scene_champion_count)
@@ -374,7 +374,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
-            MarkTime(9);
+            // MarkTime(9);
 
             // rebase all scenes whose actual offset does not match their expected offset
             for (int i = 0; i < scenes.Count; i++)
@@ -383,7 +383,7 @@ namespace FloatingOffset.Runtime
                 handler.UpdateOffset(scenes.GetSceneAt(i));
             }
 
-            MarkTime(10);
+            // MarkTime(10);
         }
 
 

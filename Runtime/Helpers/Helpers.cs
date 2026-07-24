@@ -20,18 +20,32 @@ namespace FloatingOffset.Runtime
 
             // 3. If none exists, create a new one
             OffsetUniverse newUniverse = ScriptableObject.CreateInstance<OffsetUniverse>();
-            
+
             // Define where to save it. (You can change this path to a specific Settings folder)
-            string defaultPath = "Assets/DefaultOffsetUniverse.asset"; 
-            
+            string defaultPath = "Assets/DefaultOffsetUniverse.asset";
+
             AssetDatabase.CreateAsset(newUniverse, defaultPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log($"[FloatingOffset] Auto-created default OffsetUniverse at: {defaultPath}");
-            
+
             return newUniverse;
         }
     }
 }
 #endif
+
+namespace FloatingOffset.Runtime
+{
+    public static class GameObjectExtensions
+    {
+        /// <summary>
+        /// Retrieves the specific PhysicsScene associated with this GameObject's scene. Equivalent to <code>gameObject.scene.GetPhysicsScene();</code>
+        /// </summary>
+        public static PhysicsScene Physics(this GameObject gameObject)
+        {
+            return gameObject.scene.GetPhysicsScene();
+        }
+    }
+}

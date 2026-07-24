@@ -200,10 +200,18 @@ namespace FloatingOffset.Editor.Tests
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
 
             Debug.Log("--- DETAILED PROFILE ---");
+            double total = 0;
             for (int i = 0; i < server.subloop_count; i++)
             {
                 var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+                if (double.IsNormal(runtime.Item2))
+                    total += runtime.Item2;
+            }
+
+            for (int i = 0; i < server.subloop_count; i++)
+            {
+                var runtime = server.averageRuntime(i);
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 *100 / total).ToString("0.##")}%");
             }
         }
 
@@ -244,10 +252,18 @@ namespace FloatingOffset.Editor.Tests
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
 
             Debug.Log("--- DETAILED PROFILE ---");
+            double total = 0;
             for (int i = 0; i < server.subloop_count; i++)
             {
                 var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+                if (double.IsNormal(runtime.Item2))
+                    total += runtime.Item2;
+            }
+
+            for (int i = 0; i < server.subloop_count; i++)
+            {
+                var runtime = server.averageRuntime(i);
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 *100 / total).ToString("0.##")}%");
             }
         }
 
