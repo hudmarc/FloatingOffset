@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Timers;
 using FloatingOffset.Runtime.Types;
-using UnityEngine;
-using static FloatingOffset.Runtime.FastUnionFind;
 
 namespace FloatingOffset.Runtime
 {
@@ -23,8 +23,8 @@ namespace FloatingOffset.Runtime
         /// </summary>
         private OffsetSceneCollection<TSceneKey> scenes = new OffsetSceneCollection<TSceneKey>();
 
-        private readonly int MaximumJoinDistance;
-        private readonly int MaximumJoinDistanceSquared;
+        private readonly int JoinDistance;
+        private readonly int JoinDistanceSquared;
 
         private readonly int SceneRadius;
         private readonly int SceneRadiusSquared;
@@ -38,18 +38,18 @@ namespace FloatingOffset.Runtime
 
         // Passing the base values as parameters with default values gives you the 
         // exact same out-of-the-box behavior, but allows for injection later if needed.
-        public OffsetServer(IOffsetHandler<TSceneKey> handler, int MinimumJoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
+        public OffsetServer(IOffsetHandler<TSceneKey> handler, int JoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
         {
-            this.MaximumJoinDistance = MinimumJoinDistance;
-            this.MaximumJoinDistanceSquared = MinimumJoinDistance * MinimumJoinDistance;
+            this.JoinDistance = JoinDistance;
+            this.JoinDistanceSquared = JoinDistance * JoinDistance;
 
-            this.SceneRadius = MinimumJoinDistance + Hysteresis;
+            this.SceneRadius = JoinDistance + Hysteresis;
             this.SceneRadiusSquared = SceneRadius * SceneRadius;
 
             this.MaxScenes = MaxScenes;
 
             this.handler = handler;
-            this.view_grid = new HashGrid(64, 64, MinimumJoinDistance);
+            this.view_grid = new HashGrid(64, 64, JoinDistance);
         }
         /// <summary>
         /// Gets the offset for the given scene.
@@ -100,8 +100,40 @@ namespace FloatingOffset.Runtime
         private Vector3d[] union_sums = new Vector3d[8];
         private ScenedUnion[] union_scene_tuples = new ScenedUnion[8];
         private FastUnionFind union = new FastUnionFind(8);
+        private Stopwatch stopwatch = new Stopwatch();
+        private (TimeSpan, int)[] process_loop_times = new (TimeSpan, int)[14];
+        private string[] process_loops = {
+        "prune views",
+        "prune unused empty scenes",
+        "ensure capacity of views array",
+        "ensure capacity of union",
+        "populate arrays",
+        "populate union-find, compute offsets for unions",
+        "aggregate data for each union",
+        "populate union_scene_tuples from the union",
+        "scan and Reduce",
+        "transfer all views that are not in the right scene && compute merges",
+        "rebase all scenes whose actual offset does not match their expected offset",
+        "populate union-find: root find",
+        "populate union-find: hashgrid search",
+        "populate union-find: nieghbor search"
+        };
+        public int subloop_count => process_loops.Length;
+        public (string, double) averageRuntime(int index)
+        {
+            double total_time = process_loop_times[index].Item1.TotalMilliseconds;
+            double number_of_calls = process_loop_times[index].Item2;
+            double average_runtime = total_time / number_of_calls;
+            return (process_loops[index], average_runtime);
+        }
 
         int[] neighborsBuffer = new int[8];
+
+        private void MarkTime(int index)
+        {
+            process_loop_times[index] = (process_loop_times[index].Item1 + stopwatch.Elapsed, process_loop_times[index].Item2 + 1);
+            stopwatch.Restart();
+        }
 
         // Tracks the current winning scene for a given root
         // Key: root | Value: (Winning Scene, Max Count, Representative View Index)
@@ -120,6 +152,7 @@ namespace FloatingOffset.Runtime
         }
         public void Process()
         {
+            stopwatch.Restart();
             union.Clear();
             // prune views scheduled for removal
             for (int i = 0; i < views.Count; i++)
@@ -134,6 +167,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
+            MarkTime(0);
             int view_count = views.Count;
 
             // prune unused empty scenes
@@ -143,9 +177,11 @@ namespace FloatingOffset.Runtime
                 handler.Unload(scenes.GetKeyAt(empty_index));
             }
 
+            MarkTime(1);
 
             EnsureCapacity(views.Count);
 
+            MarkTime(2);
             // Initialize caches
 
             view_positions = new Vector3d[view_count];
@@ -153,6 +189,8 @@ namespace FloatingOffset.Runtime
             view_grid.Clear();
 
             union.EnsureCapacity(view_count);
+
+            MarkTime(3);
 
             for (int i = 0; i < view_count; i++)
             {
@@ -171,6 +209,7 @@ namespace FloatingOffset.Runtime
                 union_sums[i] = Vector3d.zero;
             }
 
+            MarkTime(4);
             // Populate union-find, compute offsets for unions
             for (int i = 0; i < view_count; i++)
             {
@@ -180,8 +219,12 @@ namespace FloatingOffset.Runtime
                 int my_scene_index = view_scene_indexes[i];
                 Vector3d my_pos = view_positions[i];
 
+                // MarkTime(11); //5.90034722222222E-05ms avg best 6.59429824561404E-05ms avg worst
+
                 // The grid ignores anyone already in myRoot.
-                view_grid.FindNeighbors(view_positions[i], view_positions, ref neighborsBuffer, out int neighbourCount, myRoot, union.unions);
+                view_grid.FindNeighbors(view_positions[i], view_positions, ref neighborsBuffer, out int neighbourCount, myRoot, i, union.unions);
+
+                // MarkTime(12); //0.00217861111111111ms avg best 0.00198877631578947ms avg worst
 
                 for (int j = 0; j < neighbourCount; j++)
                 {
@@ -198,30 +241,20 @@ namespace FloatingOffset.Runtime
                             // Layer Check
                             if (scenes.SameLayer(my_scene_index, view_scene_indexes[neighborIndex]))
                             {
-                                // Real position distance check
-                                double distance_from_neighbor = (my_pos - view_positions[neighborIndex]).sqrMagnitude;
+                                // Merge them.
+                                union.Union(i, neighborIndex);
 
-                                // If we don't merge with them this iteration, they will merge with us next iteration.
-                                if (distance_from_neighbor < MaximumJoinDistanceSquared)
-                                {
-                                    double our_separation = (my_pos - scenes.GetOffsetAt(my_scene_index)).sqrMagnitude;
-                                    double their_separation = (view_positions[neighborIndex] - scenes.GetOffsetAt(view_scene_indexes[neighborIndex])).sqrMagnitude;
-
-                                    if (our_separation <= their_separation)
-                                    {
-                                        // Merge them.
-                                        union.Union(i, neighborIndex);
-
-                                        // Because we just absorbed someone, our root might have changed.
-                                        // Update myRoot so the next iteration of the grid uses the new, larger group.
-                                        myRoot = union.Find(i);
-                                    }
-                                }
+                                // Because we just absorbed someone, our root might have changed.
+                                // Update myRoot so the next iteration of the grid uses the new, larger group.
+                                myRoot = union.Find(i);
                             }
                         }
                     }
                 }
+                // MarkTime(13);//5.00868055555556E-05ms avg best, 0.000137934210526316ms avg worst
             }
+            MarkTime(5);
+
 
             // Aggregate data for each union
             for (int i = 0; i < view_count; i++)
@@ -231,16 +264,18 @@ namespace FloatingOffset.Runtime
                 union_sums[rep] += view_positions[i];
             }
 
+            MarkTime(6);
 
             winners.Clear();
 
             Array.Clear(union_scene_tuples, 0, union_scene_tuples.Length);
-
+            // populate union_scene_tuples from the union
             for (int i = 0; i < view_count; i++)
             {
                 union_scene_tuples[i] = new ScenedUnion { scene_index = view_scene_indexes[i], representative = union.Find(i) };
             }
 
+            MarkTime(7);
             int current_scene = union_scene_tuples[0].scene_index;
             int current_union = union_scene_tuples[0].representative;
             int current_run_count = 1;
@@ -286,6 +321,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
+            MarkTime(8);
             // Resolve the Tail
             // Evaluate the final run that was active when the loop ended
             if (current_run_count > scene_champion_count)
@@ -317,7 +353,7 @@ namespace FloatingOffset.Runtime
                     if (winner.winner_index == i)
                     {
                         Vector3d average = union_sums[rep] / (double)union_counts[rep];
-                        if ((average - scenes.GetOffsetAt(winner.scene_index)).sqrMagnitude > MaximumJoinDistanceSquared)
+                        if ((average - scenes.GetOffsetAt(winner.scene_index)).sqrMagnitude > JoinDistanceSquared)
                             scenes.Offset(scene, average);
                     }
                 }
@@ -338,12 +374,16 @@ namespace FloatingOffset.Runtime
                 }
             }
 
+            MarkTime(9);
+
             // rebase all scenes whose actual offset does not match their expected offset
             for (int i = 0; i < scenes.Count; i++)
             {
                 // updateOffset does nothing if the offset is already updated.
                 handler.UpdateOffset(scenes.GetSceneAt(i));
             }
+
+            MarkTime(10);
         }
 
 
@@ -421,7 +461,7 @@ namespace FloatingOffset.Runtime
         {
             TSceneKey origin = offsetObject.GetSceneKey();
             Vector3d offset = scenes.GetOffset(origin);
-            if ((offset + offsetObject.GetEnginePosition() - real_position).sqrMagnitude < MaximumJoinDistanceSquared)
+            if ((offset + offsetObject.GetEnginePosition() - real_position).sqrMagnitude < JoinDistanceSquared)
             {
                 offsetObject.SetEnginePosition(real_position - offset);
                 return;

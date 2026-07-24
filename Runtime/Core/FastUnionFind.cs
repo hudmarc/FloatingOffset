@@ -5,6 +5,7 @@ namespace FloatingOffset.Runtime
 {
     public sealed class FastUnionFind
     {
+        byte[] ranks;
         public int[] unions;
 
         public ref int this[int index]
@@ -15,6 +16,7 @@ namespace FloatingOffset.Runtime
         public FastUnionFind(int initialCapacity)
         {
             unions = new int[0];
+            ranks = new byte[0];
             EnsureCapacity(initialCapacity);
         }
 
@@ -25,6 +27,7 @@ namespace FloatingOffset.Runtime
                 int oldLength = unions.Length;
                 int newSize = count * 2;
                 Array.Resize(ref unions, newSize);
+                Array.Resize(ref ranks, newSize);
 
                 for (int i = oldLength; i < newSize; i++)
                 {
@@ -60,20 +63,34 @@ namespace FloatingOffset.Runtime
         }
 
         /// <summary>
-        /// Merges j's union into i's union. Representative will be union i's representative.
+        /// Merges j's union into i's union using Union-by-Rank
         /// </summary>
-        /// <param name="i"></param>
-        /// <param name="j"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Union(int i, int j)
         {
             int rootI = Find(i);
             int rootJ = Find(j);
+
             if (rootI != rootJ)
             {
-                unions[rootJ] = rootI; // Attach J's tree to I
+                // Attach the shorter tree to the taller tree
+                if (ranks[rootI] < ranks[rootJ])
+                {
+                    unions[rootI] = rootJ;
+                }
+                else if (ranks[rootI] > ranks[rootJ])
+                {
+                    unions[rootJ] = rootI;
+                }
+                else
+                {
+                    // If they are the same height, pick one arbitrarily and increase its rank
+                    unions[rootJ] = rootI;
+                    ranks[rootI]++;
+                }
             }
         }
+
         public void Clear()
         {
             for (int i = 0; i < unions.Length; i++)
