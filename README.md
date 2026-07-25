@@ -14,7 +14,9 @@ This package extends the possible world size to ~`2.114e+35` light years. The kn
 
 It does this using scene stacking (to support multiplayer games) and floating origin (i.e. the world moves around the players, not the other way around)
 
-That's pretty much it.
+## What's different about this package, compared to others?
+
+As far as I know, this package is the only open source origin-shifting/world rebasing solution that supports full server authority in a multiplayer environment. Every other open source package is generally client-side only, but this package uses neighborhood clustering to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetServer` contains the bulk of the implementation.
 
 ### Is this package fast enough for my game? I want to host around 400 players on one world on my server.
 
