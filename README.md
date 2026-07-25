@@ -5,7 +5,7 @@
 
 ### Want to see this package in action?
 
-#### Check out the [Techdemo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
+#### Check out the [Server Authoritative Client Side Prediction Demo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
 
 ## What is this?
 By default, Unity can handle ~20km by 20km game worlds without running into floating point precision limitations.
