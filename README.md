@@ -3,7 +3,7 @@
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
 - Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Examples > FishNet`) to your FishNet `NetworkManager`
 - Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
-- Everything is managed through the `OffsetUniverse`, if you want to teleport the player you also call that through the `OffsetUniverse`. Attach it to your scirpts like you would any other ScriptableObject. By default one will be created in your root assets folder.
+- Everything is managed through the `OffsetUniverse`, if you want to teleport the player you also call that through the `OffsetUniverse`. Attach it to your scripts like you would any other ScriptableObject. By default one will be created in your root assets folder.
 <img width="451" alt="image" src="https://user-images.githubusercontent.com/44267994/228247674-b075e104-a93a-4a9f-bdbe-5d0b2c8a49ba.png">
 
 Setup tutorial video coming soon.
