@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Timers;
 using FloatingOffset.Runtime.Types;
 
 namespace FloatingOffset.Runtime
@@ -13,7 +12,7 @@ namespace FloatingOffset.Runtime
     public class OffsetServer<TSceneKey>
     {
         /// <summary>
-        /// Quickly iterable list of views. An OffsetTransform is here <==> it is considered a view.
+        /// Quickly iterable list of views. An OffsetView is here <==> it is considered a view.
         /// </summary>
         private List<IOffsetObject<TSceneKey>> views = new List<IOffsetObject<TSceneKey>>();
         private HashSet<IOffsetObject<TSceneKey>> views_to_remove = new HashSet<IOffsetObject<TSceneKey>>();
@@ -496,9 +495,6 @@ namespace FloatingOffset.Runtime
             }
         }
     }
-
-
-
     public struct SceneWinner : IComparable<SceneWinner>, IEquatable<SceneWinner>
     {
         public int scene_index;

@@ -35,17 +35,3 @@ namespace FloatingOffset.Runtime
     }
 }
 #endif
-
-namespace FloatingOffset.Runtime
-{
-    public static class GameObjectExtensions
-    {
-        /// <summary>
-        /// Retrieves the specific PhysicsScene associated with this GameObject's scene. Equivalent to <code>gameObject.scene.GetPhysicsScene();</code>
-        /// </summary>
-        public static PhysicsScene Physics(this GameObject gameObject)
-        {
-            return gameObject.scene.GetPhysicsScene();
-        }
-    }
-}

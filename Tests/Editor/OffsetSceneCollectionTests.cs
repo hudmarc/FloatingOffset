@@ -8,118 +8,107 @@ using UnityEngine;
 namespace FloatingOffset.Editor.Tests
 {
     // A simple mock handler to satisfy the IOffsetHandler interface during testing
-    using System;
-using System.Collections.Generic;
-using UnityEngine;
-
-// Assumes Mathd and IOffset... interfaces exist in your namespace
-public class MockOffsetHandler : IOffsetHandler<int>
-{
-    private int _sceneKeyCounter;
-    private IOffsetObject<int> main;
-
-    // Keeps track of the mathematical origin of each scene
-    public Dictionary<int, Vector3d> SceneOffsets { get; } = new Dictionary<int, Vector3d>();
-
-    // Mimics Unity's scene.GetRootGameObjects() by grouping objects by their scene key
-    public Dictionary<int, HashSet<IOffsetObject<int>>> SceneRootObjects { get; } = new Dictionary<int, HashSet<IOffsetObject<int>>>();
-
-    public MockOffsetHandler(int initialSceneKey)
+    public class MockOffsetHandler : IOffsetHandler<int>
     {
-        _sceneKeyCounter = initialSceneKey;
-        SceneOffsets[initialSceneKey] = Vector3d.zero;
-        SceneRootObjects[initialSceneKey] = new HashSet<IOffsetObject<int>>();
-    }
+        private int _sceneKeyCounter;
+        private IOffsetObject<int> main;
 
-    // Helper for unit tests to replace mock_handler.TrackedObjects.Add()
-    public void Add(IOffsetObject<int> obj)
-    {
-        int key = obj.GetSceneKey();
-        if (!SceneRootObjects.ContainsKey(key))
+        // Keeps track of the mathematical origin of each scene
+        public Dictionary<int, Vector3d> SceneOffsets { get; } = new Dictionary<int, Vector3d>();
+
+        // Mimics Unity's scene.GetRootGameObjects() by grouping objects by their scene key
+        public Dictionary<int, HashSet<IOffsetObject<int>>> SceneRootObjects { get; } = new Dictionary<int, HashSet<IOffsetObject<int>>>();
+
+        public MockOffsetHandler(int initialSceneKey)
         {
-            SceneRootObjects[key] = new HashSet<IOffsetObject<int>>();
-        }
-        SceneRootObjects[key].Add(obj);
-    }
-
-    public Vector3d RealPosition(Vector3d engine_position, int scene_index) => SceneOffsets[scene_index] + engine_position;
-    public Vector3d RealPosition(IOffsetObject<int> offsetObject) => SceneOffsets[offsetObject.GetSceneKey()] + offsetObject.GetEnginePosition();
-
-    public void Clone(int scene, Action<int> onSceneReady)
-    {
-        // Simulate an async scene load
-        _sceneKeyCounter++;
-        int newScene = _sceneKeyCounter;
-
-        // Initialize the new scene at the origin and create its object container
-        SceneOffsets[newScene] = Vector3d.zero;
-        SceneRootObjects[newScene] = new HashSet<IOffsetObject<int>>();
-
-        onSceneReady?.Invoke(newScene);
-    }
-
-    public void RegisterOffsettable(IOffsettable<int> offsettable, int scene)
-    {
-        // If your architecture passes IOffsetObject here, you would add it to SceneRootObjects[scene].
-        // For the provided pure math tests, TrackObjectInScene handles the injection.
-    }
-
-    public void TransferTo(IOffsetObject<int> offsettable, int from, int to, bool reposition = false)
-    {
-        if (reposition)
-        {
-            Vector3d oldOrigin = SceneOffsets.ContainsKey(from) ? SceneOffsets[from] : Vector3d.zero;
-            Vector3d trueGlobalPos = oldOrigin + offsettable.GetEnginePosition();
-
-            Vector3d newOrigin = SceneOffsets.ContainsKey(to) ? SceneOffsets[to] : Vector3d.zero;
-            offsettable.SetEnginePosition(trueGlobalPos - newOrigin);
+            _sceneKeyCounter = initialSceneKey;
+            SceneOffsets[initialSceneKey] = Vector3d.zero;
+            SceneRootObjects[initialSceneKey] = new HashSet<IOffsetObject<int>>();
         }
 
-        // Remove from old scene container
-        if (SceneRootObjects.ContainsKey(from))
+        // Helper for unit tests to replace mock_handler.TrackedObjects.Add()
+        public void Add(IOffsetObject<int> obj)
         {
-            SceneRootObjects[from].Remove(offsettable);
-        }
-
-        // Add to new scene container
-        if (!SceneRootObjects.ContainsKey(to))
-        {
-            SceneRootObjects[to] = new HashSet<IOffsetObject<int>>();
-        }
-        SceneRootObjects[to].Add(offsettable);
-
-        offsettable.SetSceneKey(to);
-    }
-
-    public void UpdateOffset(OffsetScene<int> scene)
-    {
-        Vector3d oldOrigin = SceneOffsets.ContainsKey(scene.key) ? SceneOffsets[scene.key] : Vector3d.zero;
-        Vector3d newOrigin = scene.offset;
-        Vector3d delta = newOrigin - oldOrigin;
-
-        SceneOffsets[scene.key] = newOrigin;
-
-        // O(1) scene lookup, O(K) object iteration where K is objects strictly in this scene
-        if (SceneRootObjects.TryGetValue(scene.key, out var objectsInScene))
-        {
-            foreach (var obj in objectsInScene)
+            int key = obj.GetSceneKey();
+            if (!SceneRootObjects.ContainsKey(key))
             {
-                obj.SetEnginePosition(obj.GetEnginePosition() - delta);
+                SceneRootObjects[key] = new HashSet<IOffsetObject<int>>();
+            }
+            SceneRootObjects[key].Add(obj);
+        }
+
+        public Vector3d RealPosition(Vector3d engine_position, int scene_index) => SceneOffsets[scene_index] + engine_position;
+        public Vector3d RealPosition(IOffsetObject<int> offsetObject) => SceneOffsets[offsetObject.GetSceneKey()] + offsetObject.GetEnginePosition();
+
+        public void Clone(int scene, Action<int> onSceneReady)
+        {
+            // Simulate an async scene load
+            _sceneKeyCounter++;
+            int newScene = _sceneKeyCounter;
+
+            // Initialize the new scene at the origin and create its object container
+            SceneOffsets[newScene] = Vector3d.zero;
+            SceneRootObjects[newScene] = new HashSet<IOffsetObject<int>>();
+
+            onSceneReady?.Invoke(newScene);
+        }
+
+        public void TransferTo(IOffsetObject<int> offsettable, int from, int to, bool reposition = false)
+        {
+            if (reposition)
+            {
+                Vector3d oldOrigin = SceneOffsets.ContainsKey(from) ? SceneOffsets[from] : Vector3d.zero;
+                Vector3d trueGlobalPos = oldOrigin + offsettable.GetEnginePosition();
+
+                Vector3d newOrigin = SceneOffsets.ContainsKey(to) ? SceneOffsets[to] : Vector3d.zero;
+                offsettable.SetEnginePosition(trueGlobalPos - newOrigin);
+            }
+
+            // Remove from old scene container
+            if (SceneRootObjects.ContainsKey(from))
+            {
+                SceneRootObjects[from].Remove(offsettable);
+            }
+
+            // Add to new scene container
+            if (!SceneRootObjects.ContainsKey(to))
+            {
+                SceneRootObjects[to] = new HashSet<IOffsetObject<int>>();
+            }
+            SceneRootObjects[to].Add(offsettable);
+
+            offsettable.SetSceneKey(to);
+        }
+
+        public void UpdateOffset(OffsetScene<int> scene)
+        {
+            Vector3d oldOrigin = SceneOffsets.ContainsKey(scene.key) ? SceneOffsets[scene.key] : Vector3d.zero;
+            Vector3d newOrigin = scene.offset;
+            Vector3d delta = newOrigin - oldOrigin;
+
+            SceneOffsets[scene.key] = newOrigin;
+
+            // O(1) scene lookup, O(K) object iteration where K is objects strictly in this scene
+            if (SceneRootObjects.TryGetValue(scene.key, out var objectsInScene))
+            {
+                foreach (var obj in objectsInScene)
+                {
+                    obj.SetEnginePosition(obj.GetEnginePosition() - delta);
+                }
             }
         }
-    }
 
-    public void Unload(int scene)
-    {
-        SceneOffsets.Remove(scene);
-        SceneRootObjects.Remove(scene);
-    }
+        public void Unload(int scene)
+        {
+            SceneOffsets.Remove(scene);
+            SceneRootObjects.Remove(scene);
+        }
 
-    public void SetMainView(IOffsetObject<int> view)
-    {
-        main = view;
+        public void SetMainView(IOffsetObject<int> view)
+        {
+            main = view;
+        }
     }
-}
 
     public class MockOffsetObject : IOffsetObject<int>
     {

@@ -1,5 +1,4 @@
 using System;
-using UnityEditor.SearchService;
 
 namespace FloatingOffset.Runtime
 {
@@ -33,7 +32,7 @@ namespace FloatingOffset.Runtime
             public int layer;
         }
         /// <summary>
-        /// IOffsetObject is the generic form of the OffsetTransform used in the core.
+        /// IOffsetObject is the generic form of the OffsetView used in the core.
         /// </summary>
         /// <typeparam name="TSceneKey"></typeparam>
         public interface IOffsetObject<TSceneKey>
@@ -59,12 +58,7 @@ namespace FloatingOffset.Runtime
             /// <param name="key"></param>
             void SetSceneKey(TSceneKey key);
             /// <summary>
-            /// Whether this OffsetTransform is a view
-            /// </summary>
-            /// <returns></returns>
-            bool IsView();
-            /// <summary>
-            /// Whether this OffsetTransform is valid (i.e. not destroyed)
+            /// Whether this OffsetView is valid (i.e. not destroyed)
             /// </summary>
             /// <returns></returns>
             bool IsValid();
@@ -93,7 +87,7 @@ namespace FloatingOffset.Runtime
             /// <param name="scene"></param>
             void UpdateOffset(OffsetScene<TSceneKey> scene);
             /// <summary>
-            /// Transfer the given OffsetTransform from the 'from' scene to the 'to' scene. If reposition is true, the position of the transform will be changed too to match the target scene's offset.
+            /// Transfer the given OffsetView from the 'from' scene to the 'to' scene. If reposition is true, the position of the transform will be changed too to match the target scene's offset.
             /// </summary>
             /// <param name="offsettable"></param>
             /// <param name="from"></param>
@@ -106,12 +100,6 @@ namespace FloatingOffset.Runtime
             /// <param name="scene"></param>
             /// <param name="onSceneReady"></param>
             void Clone(TSceneKey scene, Action<TSceneKey> onSceneReady);
-            /// <summary>
-            /// Register the given Offsettable with the offset handler.
-            /// </summary>
-            /// <param name="offsettable"></param>
-            /// <param name="scene"></param>
-            void RegisterOffsettable(IOffsettable<TSceneKey> offsettable, TSceneKey scene);
             /// <summary>
             /// Unload the given scene.
             /// </summary>

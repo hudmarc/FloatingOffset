@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 namespace FloatingOffset.Runtime
 {
+
     // Experimental fast hash grid. Implementation details may change.
     public class HashGrid
     {
@@ -66,14 +66,6 @@ namespace FloatingOffset.Runtime
         {
             uint h = (uint)(gridX * PrimeX ^ gridY * PrimeY ^ gridZ * PrimeZ);
             return (int)(h & bucketMask);
-        }
-
-        public Vector3Int ToGrid(Vector3d vector)
-        {
-            int gridX = FastFloor(vector.x * invCellSize);
-            int gridY = FastFloor(vector.y * invCellSize);
-            int gridZ = FastFloor(vector.z * invCellSize);
-            return new Vector3Int(gridX, gridY, gridZ);
         }
 
         public void Add(Vector3d position, int viewIndex)

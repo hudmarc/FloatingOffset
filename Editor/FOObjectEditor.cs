@@ -63,7 +63,7 @@ namespace FloatingOffset.Editor
             }
 
             Transform t = target as Transform;
-            t.TryGetComponent(out OffsetTransform offset_transform);
+            t.TryGetComponent(out OffsetView offset_transform);
             if (t == null) return;
 
             OffsetUniverse universe = GetUniverse();
@@ -102,7 +102,7 @@ namespace FloatingOffset.Editor
                     return;
                 }
 
-                if (!universe.ServerActive || !universe.HasScene(t.gameObject.scene))
+                if (!universe.ServerActive || !universe.manager.HasScene(t.gameObject.scene))
                 {
                     EditorGUILayout.LabelField("[Scene not registered]");
                     EditorGUILayout.EndVertical();
@@ -110,7 +110,7 @@ namespace FloatingOffset.Editor
                     return;
                 }
 
-                sceneOffset = universe.GetSceneOffset(t.gameObject.scene);
+                sceneOffset = universe.manager.GetOffset(t.gameObject.scene);
                 Vector3d position = sceneOffset + Mathd.toVector3d(t.position);
 
                 if (lastTargetId != t.GetInstanceID())
@@ -168,7 +168,7 @@ namespace FloatingOffset.Editor
 
                     if (offset_transform != null)
                     {
-                        universe.TeleportTo(offset_transform, targetPositionDouble);
+                        universe.manager.TeleportTo(offset_transform, targetPositionDouble);
                     }
                     else
                     {

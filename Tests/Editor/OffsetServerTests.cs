@@ -211,7 +211,7 @@ namespace FloatingOffset.Editor.Tests
             for (int i = 0; i < server.subloop_count; i++)
             {
                 var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 *100 / total).ToString("0.##")}%");
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 * 100 / total).ToString("0.##")}%");
             }
         }
 
@@ -263,7 +263,7 @@ namespace FloatingOffset.Editor.Tests
             for (int i = 0; i < server.subloop_count; i++)
             {
                 var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 *100 / total).ToString("0.##")}%");
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 * 100 / total).ToString("0.##")}%");
             }
         }
 
