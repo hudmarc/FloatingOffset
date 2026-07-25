@@ -1,11 +1,16 @@
-# Quickstart
+# Quickstart (FishNet)
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
+- Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Examples > FishNet`) to your FishNet `NetworkManager`
+- Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
+- Everything is managed through the `OffsetUniverse`, if you want to teleport the player you also call that through the `OffsetUniverse`. Attach it to your scripts like you would any other ScriptableObject. By default one will be created in your root assets folder.
 <img width="451" alt="image" src="https://user-images.githubusercontent.com/44267994/228247674-b075e104-a93a-4a9f-bdbe-5d0b2c8a49ba.png">
+
+Setup tutorial video coming soon.
 
 ### Want to see this package in action?
 
-#### Check out the [Techdemo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
+#### Check out the [Server Authoritative Client Side Prediction Demo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
 
 ## What is this?
 By default, Unity can handle ~20km by 20km game worlds without running into floating point precision limitations.
@@ -14,7 +19,9 @@ This package extends the possible world size to ~`2.114e+35` light years. The kn
 
 It does this using scene stacking (to support multiplayer games) and floating origin (i.e. the world moves around the players, not the other way around)
 
-That's pretty much it.
+## What's different about this package, compared to others?
+
+As far as I know, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Every other open source package so far is generally client-side only, but this package uses neighborhood clustering to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetServer` contains the bulk of the implementation.
 
 ### Is this package fast enough for my game? I want to host around 400 players on one world on my server.
 
