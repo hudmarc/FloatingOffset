@@ -1,5 +1,7 @@
 using System;
+
 using FloatingOffset.Runtime.Types;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
@@ -15,7 +17,7 @@ namespace FloatingOffset.Runtime
         public Action OnOffset;
         void Start()
         {
-            if (enabled)
+            if (enabled && !registered)
             {
                 universe.manager.RegisterView(this);
                 registered = true;

@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class BasicOffsetSceneHandler : OffsetSceneHandler
+    public class BasicOffsetSceneHandler : OffsetSceneHandler, IOffsetHandler<Scene>
     {
         private Scene last_scene = default;
 
@@ -14,7 +14,7 @@ namespace FloatingOffset.Runtime.Example
         /// Updates the offset for the given scene.
         /// </summary>
         /// <param name="scene"></param>
-        public override void UpdateOffset(OffsetScene<Scene> scene)
+        public void UpdateOffset(OffsetScene<Scene> scene)
         {
             var key = scene.key;
             if (!current_offsets.ContainsKey(key))
@@ -44,7 +44,7 @@ namespace FloatingOffset.Runtime.Example
         /// </summary>
         /// <param name="offsetObject"></param>
         /// <param name="scene"></param>
-        public override void TransferTo(IOffsetObject<Scene> offsetObject, Scene from, Scene to, bool reposition = false)
+        public void TransferTo(IOffsetObject<Scene> offsetObject, Scene from, Scene to, bool reposition = false)
         {
             Vector3d absoluteRealPos = current_offsets[from] + offsetObject.GetEnginePosition();
 
@@ -82,7 +82,7 @@ namespace FloatingOffset.Runtime.Example
         /// </summary>
         /// <param name="scene"></param>
         /// <param name="onSceneReady"></param>
-        public override void Clone(Scene scene, Action<Scene> onSceneReady)
+        public void Clone(Scene scene, Action<Scene> onSceneReady)
         {
             float start_time = Time.time;
             if (last_scene == scene)
@@ -96,7 +96,7 @@ namespace FloatingOffset.Runtime.Example
             SceneManager.LoadSceneAsync(scene.buildIndex, parameters).completed += (arg) => SetupScene(onSceneReady, start_time);
         }
 
-        public override void Unload(Scene scene)
+        public void Unload(Scene scene)
         {
             SceneManager.UnloadSceneAsync(scene);
         }

@@ -31,19 +31,23 @@ namespace FloatingOffset.Runtime
         /// Register the manager. Can only be called once. Subsequent calls will be ignored. Only call on the host.<br>
         /// Initializes the OffsetServer.
         /// </summary>
+        /// <param name="manager">
+        /// The OffsetManager component.
+        /// </param>
         /// <param name="handler">
         /// The OffsetHandler component.
         /// </param>
-        public void InitializeWithHandler(IOffsetHandler<Scene> handler)
+        public void InitializeWithHandler(OffsetManager manager, IOffsetHandler<Scene> handler)
         {
-            if (this.manager != null)
-            {
-                Debug.LogWarning("Attempted to register manager when one is already registered. Make sure you only have one OffsetManager instance in your game.");
-                return;
-            }
             if (server == null)
-                this.server = new OffsetServer<Scene>(handler, MinimumJoinDistance, MaxScenes, Hysteresis); // Ensure the OffsetServer is ready before the handler is registered
+                this.server = new OffsetServer<Scene>(handler, MinimumJoinDistance, MaxScenes, Hysteresis); // Ensure the OffsetServer is ready before the manager is registered
 
+            if (manager == null)
+                this.manager = manager;
+        }
+
+        public void RegisterManager(OffsetManager manager)
+        {
             this.manager = manager;
         }
         /// <summary>

@@ -4,16 +4,12 @@ using FishNet.Transporting;
 using FishNet.Broadcast;
 using FishNet.Connection;
 using UnityEngine;
+using FloatingOffset.Runtime.Types;
+using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public struct RequestOffsetBroadcast : IBroadcast { public NetworkObject offset_transform_object; }
-
-    public struct ReceiveOffsetBroadcast : IBroadcast
-    {
-        public double OffsetX, OffsetY, OffsetZ;
-    }
-    public class OffsetManagerNetworking : OffsetManager
+    public class FishNetOffsetManager : OffsetManager
     {
         private Vector3d old_offset = Vector3d.zero;
         private NetworkManager networkManager;
@@ -32,11 +28,15 @@ namespace FloatingOffset.Runtime.Example
                 networkManager.TimeManager.SetPhysicsMode(FishNet.Managing.Timing.PhysicsMode.TimeManager);
                 networkManager.ServerManager.OnServerConnectionState += OnStateChange;
             }
+
+            universe.RegisterManager(this); //this way clients can still query their real offsets
         }
 
         private void Physics()
         {
             handler.PhysicsProcess((float)networkManager.TimeManager.TickDelta);
+            if (universe.ServerActive)
+                Process();
         }
 
         // Called on server
@@ -44,7 +44,8 @@ namespace FloatingOffset.Runtime.Example
         {
             if (args.ConnectionState == LocalConnectionState.Started)
             {
-                universe.InitializeWithHandler(handler);
+                Debug.Log("Initialized universe");
+                universe.InitializeWithHandler(this, handler as IOffsetHandler<Scene>);
             }
         }
 
@@ -134,5 +135,11 @@ namespace FloatingOffset.Runtime.Example
             handler.offsetter.Offset(old_offset, new_offset, localView.gameObject.scene);
             old_offset = new_offset;
         }
+    }
+    public struct RequestOffsetBroadcast : IBroadcast { public NetworkObject offset_transform_object; }
+
+    public struct ReceiveOffsetBroadcast : IBroadcast
+    {
+        public double OffsetX, OffsetY, OffsetZ;
     }
 }

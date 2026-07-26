@@ -1,5 +1,7 @@
 using FloatingOffset.Runtime.Example;
+using FloatingOffset.Runtime.Types;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
@@ -13,7 +15,7 @@ namespace FloatingOffset.Runtime
             if (handler == null)
                 handler = gameObject.AddComponent<BasicOffsetSceneHandler>();
 
-            universe.InitializeWithHandler(handler);
+            universe.InitializeWithHandler(this, handler as IOffsetHandler<Scene>);
         }
         void Start()
         {
@@ -32,6 +34,6 @@ namespace FloatingOffset.Runtime
 
             handler.PhysicsProcess(Time.fixedDeltaTime);
         }
-        
+
     }
 }

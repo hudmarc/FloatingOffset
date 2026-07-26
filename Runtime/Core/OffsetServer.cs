@@ -365,7 +365,7 @@ namespace FloatingOffset.Runtime
                     // the flip-side: if you a player was just interacting with a bunch of other players and then they warp-speed out
                     // they might have a frame hitch as they warp out. keep this in mind as the gamedev, or use the Teleport(view,real_position);
                     // function on the OffsetManager.
-                    if (RequestScene(source, union_sums[rep] / (double)union_counts[rep], out int found))
+                    if (RequestScene(source, union_sums[rep] / (double)union_counts[rep], out int found)) //this runs once per frame now instead of only ever when a view is in a scene that has not been rebased
                     {
                         // transfer the view to the scene
                         Transfer(views[i], views[i].GetSceneKey(), scenes.GetSceneAt(found).key);

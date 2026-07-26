@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 namespace FloatingOffset.Runtime
 {
     [RequireComponent(typeof(Offsetter))]
-    public class OffsetSceneHandler : OffsetBehaviour, IOffsetHandler<Scene>
+    public class OffsetSceneHandler : OffsetBehaviour
     {
         [field: SerializeField]
         public Offsetter offsetter { get; private set; }
@@ -34,7 +34,7 @@ namespace FloatingOffset.Runtime
             // Only search for the asset if the field is currently empty
             if (offsetter == null)
             {
-                offsetter = gameObject.AddComponent<Offsetter>();
+                offsetter = gameObject.GetComponent<Offsetter>();
             }
         }
 #endif
@@ -50,6 +50,8 @@ namespace FloatingOffset.Runtime
         public virtual bool HasScene(Scene scene) => current_offsets.ContainsKey(scene);
         internal void RegisterView(OffsetView offsetTransform)
         {
+            if (universe.logging)
+                Debug.Log($"Registered View {offsetTransform.name}");
             if (universe.ServerActive)
             {
                 universe.server.RegisterView(offsetTransform);
@@ -64,26 +66,6 @@ namespace FloatingOffset.Runtime
             {
                 scene.GetPhysicsScene().Simulate(delta);
             }
-        }
-
-        virtual public void UpdateOffset(OffsetScene<Scene> scene)
-        {
-            throw new NotImplementedException();
-        }
-
-        virtual public void TransferTo(IOffsetObject<Scene> offsettable, Scene from, Scene to, bool reposition = false)
-        {
-            throw new NotImplementedException();
-        }
-
-        virtual public void Clone(Scene scene, Action<Scene> onSceneReady)
-        {
-            throw new NotImplementedException();
-        }
-
-        virtual public void Unload(Scene scene)
-        {
-            throw new NotImplementedException();
         }
 
         // culls scened OffsetTransforms from any scenes that are duplicates of an existing scene.
