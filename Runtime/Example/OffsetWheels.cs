@@ -2,9 +2,9 @@ using System.Collections;
 using FloatingOffset.Runtime;
 using UnityEngine;
 
-public class OffsetPredictedWheels : MonoBehaviour
+public class OffsetWheels : MonoBehaviour
 {
-    private OffsetView offset_transform;
+    private OffsetTransform offset_transform;
     private WheelCollider[] wheels = new WheelCollider[0];
 
     // Cache original wheel settings per wheel
@@ -17,7 +17,7 @@ public class OffsetPredictedWheels : MonoBehaviour
 
     void Awake()
     {
-        offset_transform = GetComponent<OffsetView>();
+        offset_transform = GetComponent<OffsetTransform>();
         offset_transform.OnOffset += FixWheels;
         wheels = GetComponentsInChildren<WheelCollider>();
 

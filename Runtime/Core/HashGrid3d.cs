@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 namespace FloatingOffset.Runtime
 {
-
     // Experimental fast hash grid. Implementation details may change.
     public class HashGrid
     {
@@ -68,6 +68,14 @@ namespace FloatingOffset.Runtime
             return (int)(h & bucketMask);
         }
 
+        public Vector3Int ToGrid(Vector3d vector)
+        {
+            int gridX = FastFloor(vector.x * invCellSize);
+            int gridY = FastFloor(vector.y * invCellSize);
+            int gridZ = FastFloor(vector.z * invCellSize);
+            return new Vector3Int(gridX, gridY, gridZ);
+        }
+
         public void Add(Vector3d position, int viewIndex)
         {
             EnsureCapacity();
@@ -86,7 +94,7 @@ namespace FloatingOffset.Runtime
         }
 
         // Passed view_positions array so TraverseBucket can do precise checks
-        public void FindNeighbors(Vector3d position, Vector3d[] view_positions, ref int[] resultsBuffer, out int resultCount, int myRoot = -1, int myIndex = -1, int[] union_reps = default)
+        public void FindNeighbors(Vector3d position, Vector3d[] view_positions, ref int[] resultsBuffer, out int resultCount, int myRoot = -1, int[] union_reps = default)
         {
             resultCount = 0;
 
@@ -123,32 +131,24 @@ namespace FloatingOffset.Runtime
             int hash7 = HashGridPosition(x1, y1, z1);
 
             // Pass the view_positions array down the chain
-            TraverseBucket(hash0, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash1, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash2, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash3, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash4, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash5, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash6, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
-            TraverseBucket(hash7, position, view_positions, myRoot, myIndex, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash0, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash1, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash2, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash3, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash4, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash5, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash6, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
+            TraverseBucket(hash7, position, view_positions, myRoot, union_reps, ref resultsBuffer, ref resultCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void TraverseBucket(int bucketHash, Vector3d searchPos, Vector3d[] view_positions, int myRoot, int myIndex, int[] union_reps, ref int[] resultsBuffer, ref int resultCount)
+        private void TraverseBucket(int bucketHash, Vector3d searchPos, Vector3d[] view_positions, int myRoot, int[] union_reps, ref int[] resultsBuffer, ref int resultCount)
         {
-
             int entryIndex = buckets[bucketHash];
 
             while (entryIndex != -1)
             {
                 int viewIndex = entries_value[entryIndex];
-
-                if (viewIndex <= myIndex)
-                {
-                    // already evaluated when i == viewIndex.
-                    entryIndex = entries_next[entryIndex];
-                    continue;
-                }
 
                 int neighborRoot = viewIndex;
                 // traverse up union-find

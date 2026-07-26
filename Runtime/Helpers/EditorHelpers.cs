@@ -20,16 +20,16 @@ namespace FloatingOffset.Runtime
 
             // 3. If none exists, create a new one
             OffsetUniverse newUniverse = ScriptableObject.CreateInstance<OffsetUniverse>();
-
+            
             // Define where to save it. (You can change this path to a specific Settings folder)
-            string defaultPath = "Assets/DefaultOffsetUniverse.asset";
-
+            string defaultPath = "Assets/DefaultOffsetUniverse.asset"; 
+            
             AssetDatabase.CreateAsset(newUniverse, defaultPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log($"[FloatingOffset] Auto-created default OffsetUniverse at: {defaultPath}");
-
+            
             return newUniverse;
         }
     }

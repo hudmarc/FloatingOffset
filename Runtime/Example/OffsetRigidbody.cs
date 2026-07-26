@@ -1,15 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class OffsetPredictedRigidbody : MonoBehaviour
+    public class OffsetRigidbody : MonoBehaviour
     {
-        private OffsetView offset_transform;
+        private OffsetTransform offset_transform;
         private Rigidbody[] rigidbodies = new Rigidbody[0];
         private Vector3[] velocities = new Vector3[0];
+        // Start is called before the first frame update
         void Awake()
         {
-            offset_transform = GetComponent<OffsetView>();
+            offset_transform = GetComponent<OffsetTransform>();
             offset_transform.OnPreOffset += GatherVelocities;
             offset_transform.OnOffset += ApplyVelocities;
             rigidbodies = GetComponentsInChildren<Rigidbody>();
@@ -25,6 +28,8 @@ namespace FloatingOffset.Runtime.Example
                 offset_transform.OnOffset -= ApplyVelocities;
             }
         }
+
+        // Update is called once per frame
         void GatherVelocities()
         {
             for (int i = 0; i < rigidbodies.Length; i++)

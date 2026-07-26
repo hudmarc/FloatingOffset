@@ -6,7 +6,7 @@ namespace FloatingOffset.Runtime
 {
     /// <summary>
     /// Offset Anchors ensure that the object they are attached to is always at the exact position specified in the OffsetAnchor's target position.<br/>
-    /// This also means that they may exist in more than one scene at a time on the server, unless they are paired with an OffsetView
+    /// This also means that they may exist in more than one scene at a time on the server.
     /// </summary>
     public class OffsetAnchor : OffsetBehaviour, IOffsettable<Scene>
     {
@@ -21,7 +21,7 @@ namespace FloatingOffset.Runtime
 
             initialized = true;
             scene = gameObject.scene;
-            universe.manager.RegisterOffsettable(this);
+            universe.RegisterOffsettable(this, scene);
 
         }
         void Start()
@@ -31,9 +31,9 @@ namespace FloatingOffset.Runtime
                 return;
             }
             scene = gameObject.scene;
-            universe.manager.RegisterOffsettable(this);
+            universe.RegisterOffsettable(this, scene);
 
-            Vector3d current_scene_offset = universe.manager.GetOffset(scene);
+            Vector3d current_scene_offset = universe.GetSceneOffset(scene);
             transform.position = Mathd.toVector3(realPosition - current_scene_offset);
 
         }

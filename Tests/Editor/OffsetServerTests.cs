@@ -58,7 +58,7 @@ namespace FloatingOffset.Editor.Tests
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
-            mock_handler.Add(view);
+            mock_handler.TrackedObjects.Add(view);
             Vector3d targetTruePos = Vector3d.zero;
             double moveAmount = 10.0;
 
@@ -93,7 +93,7 @@ namespace FloatingOffset.Editor.Tests
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
-            mock_handler.Add(view);
+            mock_handler.TrackedObjects.Add(view);
 
             Vector3d targetTruePos = Vector3d.zero;
             double jumpDistance = 20000.0;
@@ -134,7 +134,7 @@ namespace FloatingOffset.Editor.Tests
                 views[i] = new MockOffsetObject(INITIAL_SCENE_KEY);
                 targetPositions[i] = Vector3d.zero;
                 server.RegisterView(views[i]);
-                mock_handler.Add(views[i]);
+                mock_handler.TrackedObjects.Add(views[i]);
             }
 
             double moveAmount = 5.0;
@@ -176,13 +176,11 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
-            OffsetServer<int> server = null;
-
             while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
                 count++;
                 sw.Restart();
-                server = StressTest(count * 20);
+                StressTest(count * 20);
                 sw.Stop();
                 double processing_time = sw.ElapsedMilliseconds;
                 if (processing_time < best)
@@ -198,21 +196,6 @@ namespace FloatingOffset.Editor.Tests
                 sum += processing_time;
             }
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
-
-            Debug.Log("--- DETAILED PROFILE ---");
-            double total = 0;
-            for (int i = 0; i < server.subloop_count; i++)
-            {
-                var runtime = server.averageRuntime(i);
-                if (double.IsNormal(runtime.Item2))
-                    total += runtime.Item2;
-            }
-
-            for (int i = 0; i < server.subloop_count; i++)
-            {
-                var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 * 100 / total).ToString("0.##")}%");
-            }
         }
 
         [Test]
@@ -228,13 +211,11 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
-            OffsetServer<int> server = null;
-
             while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
                 count++;
                 sw.Restart();
-                server = StressTest(count * 20, 20000);
+                StressTest(count * 20, 20000);
                 sw.Stop();
                 double processing_time = sw.ElapsedMilliseconds;
                 if (processing_time < best)
@@ -250,24 +231,9 @@ namespace FloatingOffset.Editor.Tests
                 sum += processing_time;
             }
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
-
-            Debug.Log("--- DETAILED PROFILE ---");
-            double total = 0;
-            for (int i = 0; i < server.subloop_count; i++)
-            {
-                var runtime = server.averageRuntime(i);
-                if (double.IsNormal(runtime.Item2))
-                    total += runtime.Item2;
-            }
-
-            for (int i = 0; i < server.subloop_count; i++)
-            {
-                var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg {(runtime.Item2 * 100 / total).ToString("0.##")}%");
-            }
         }
 
-        OffsetServer<int> StressTest(int VIEWS, int SPREAD = 1)
+        void StressTest(int VIEWS, int SPREAD = 1)
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, VIEWS);
@@ -281,7 +247,7 @@ namespace FloatingOffset.Editor.Tests
                 views[i] = new MockOffsetObject(INITIAL_SCENE_KEY);
                 targetPositions[i] = Vector3d.zero;
                 server.RegisterView(views[i]);
-                mock_handler.Add(views[i]);
+                mock_handler.TrackedObjects.Add(views[i]);
             }
 
             double moveAmount = 5.0;
@@ -312,7 +278,7 @@ namespace FloatingOffset.Editor.Tests
 
                 }
             }
-            return server;
+            // Debug.Log($" Scene count {SceneManager.sceneCount}");
         }
 
 
@@ -322,13 +288,13 @@ namespace FloatingOffset.Editor.Tests
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
-            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY); //INITIAL_SCENE_KEY =100
+            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
             var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(viewA);
             server.RegisterView(viewB);
-            mock_handler.Add(viewA);
-            mock_handler.Add(viewB);
+            mock_handler.TrackedObjects.Add(viewA);
+            mock_handler.TrackedObjects.Add(viewB);
             server.Process();
 
             // 1. Massive separation
@@ -367,10 +333,10 @@ namespace FloatingOffset.Editor.Tests
             server.RegisterView(v1);
             server.RegisterView(v2);
 
-            mock_handler.Add(control);
-            mock_handler.Add(v0);
-            mock_handler.Add(v1);
-            mock_handler.Add(v2);
+            mock_handler.TrackedObjects.Add(control);
+            mock_handler.TrackedObjects.Add(v0);
+            mock_handler.TrackedObjects.Add(v1);
+            mock_handler.TrackedObjects.Add(v2);
 
             // Move v0 and v1 together massively
             Vector3d moveDelta = new Vector3d(50000, 0, 0);
@@ -405,9 +371,9 @@ namespace FloatingOffset.Editor.Tests
             server.RegisterView(control);
             server.RegisterView(erraticView);
 
-            mock_handler.Add(control);
+            mock_handler.TrackedObjects.Add(control);
 
-            mock_handler.Add(erraticView);
+            mock_handler.TrackedObjects.Add(erraticView);
 
             int consecutiveCorruptedFrames = 0;
             Vector3d controlTrueTarget = Vector3d.zero;

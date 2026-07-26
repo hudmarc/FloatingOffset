@@ -1,27 +1,20 @@
-# Quickstart (FishNet)
+# Quickstart
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
-- Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Examples > FishNet`) to your FishNet `NetworkManager`
-- Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
-- Everything is managed through the `OffsetUniverse`, if you want to teleport the player you also call that through the `OffsetUniverse`. Attach it to your scripts like you would any other ScriptableObject. By default one will be created in your root assets folder.
 <img width="451" alt="image" src="https://user-images.githubusercontent.com/44267994/228247674-b075e104-a93a-4a9f-bdbe-5d0b2c8a49ba.png">
-
-Setup tutorial video coming soon.
 
 ### Want to see this package in action?
 
-#### Check out the [Server Authoritative Client Side Prediction Demo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
+#### Check out the [Techdemo Here](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master)
 
 ## What is this?
 By default, Unity can handle ~20km by 20km game worlds without running into floating point precision limitations.
 
 This package extends the possible world size to ~`2.114e+35` light years. The known universe is only `4.651e+10` light years (as of writing this README)
 
-This is currently the only open-source Unity package that can do this while maintaining full server authority. It is also compatible with client-side prediction, but you may need to adjust your CSP scripts.
+It does this using scene stacking (to support multiplayer games) and floating origin (i.e. the world moves around the players, not the other way around)
 
-## What's different about this package?
-
-At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetServer` contains the bulk of the implementation.
+That's pretty much it.
 
 ### Is this package fast enough for my game? I want to host around 400 players on one world on my server.
 
@@ -29,27 +22,27 @@ Assuming a 4ms frame budget and a midrange server (in other words, the same cost
 
 ### Benchmarks:
 
-> If all players are in one spot (clustered, absolute worst case)
+> If players are in one spot (clustered, worst case)
 ```
-MultipleViewsSameClientStressTestWorstCase (2.578s)
+MultipleViewsSameClientStressTestWorstCase (2.279s)
 ---
-Stopped at 420 players with simulated frametime 4ms.
-Average: 2.02777777777778ms
-Worst: 4.06666666666667ms @ 420 players
-Best: 0.433333333333333ms @ 40 players
+Stopped at 380 players with simulated frametime 4ms.
+Average: 1.99035087719298ms
+Worst: 4.2ms @ 380 players
+Best: 0.45ms @ 60 players
 ```
 
 > If players are spread out evenly (not clustered, average case)
 ```
-MultipleViewsSameClientStressTestSpreadOut (4.803s)
+MultipleViewsSameClientStressTestSpreadOut (2.424s)
 ---
-Stopped at 1040 players with simulated frametime 4ms.
-Average: 1.52852564102564ms
-Worst: 4.15ms @ 1040 players
-Best: 0.05ms @ 40 players
+Stopped at 500 players with simulated frametime 4ms.
+Average: 1.598ms
+Worst: 4.45ms @ 500 players
+Best: 0.1ms @ 60 players
 ```
 
-> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 1000 players on an actual Unity game with this package, please let me know!
+> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 400 players on an actual Unity game with this package, please let me know!
 
 `Tested on 6-Core Mobile Core i7 (I7-9750H) @ 4.5Ghz Turbo Boost`
 
@@ -57,7 +50,7 @@ Best: 0.05ms @ 40 players
 - Create an Offline Scene, this should have your FishNet `NetworkManager`, add the `OffsetManagerNetworking` component and untick Unity Physics if you want to use TimeManager physics.
 - Add an OffsetTransform to your player, and tick 'isView'
 - If you have static structures that can be duplicated, anchor them in real space using the `OffsetAnchor`
-- If your game uses line renderers or particle effects and you want them to be offset correctly add the `EffectOffsetter` to your manager object and assign it to the `OffsetManager`
+- If your game uses line renderers or particle effects and you want them to be offset correctly add the `ffectOffsetter` to your manager object and assign it to the `OffsetManager`
 - To configure the Floating Offset backend, set your preferences to the `OffsetUniverse`. It should be automatically created at the root of your project. If not, you can create your own under  `Assets/Create/Floating Offset/OffsetUniverse`
 - To teleport views to specific real positions, use `universe.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
 
@@ -121,3 +114,75 @@ Offset Anchors ensure that the object they are attached to are always at the exa
 ## IgnoreOffset
 
 Marks an object as ignored by the Offset system, when a scene is rebased this object will not be moved. Great for terrains that need to stay near the origin and use some custom system to render themselves. (for exmaple, offsetting the terrain by the scene offset, I'll port an example as soon as I can)
+
+---
+
+### 0.2.0 TODO
+
+### Networking
+
+✅ Test offset syncing to clients
+
+✅ Implement and test OffsetCondition for hiding objects not in your offset scene.
+
+### Preferences
+
+✅ OffsetUniverse for centralized preferences and state
+
+### Management
+
+✅ ~~Thin OffsetSceneHandler that is decoupled from the internal data representation of OffsetScenes~~ It was so thin that functionality was moved into OffsetManager, ~~`OffsetSceneBootstrapper` only handles registration of scenes now.~~ You don't need to add anything to your game scenes. The package automatically detects which scene to run offset on based on the first view that registers itself.
+
+✅ Thin OffsetManager (only bootstraps OffsetServer and adds reference to OffsetUniverse)
+
+### DevEx
+
+✅ ~~Helper methods/extension~~ (See `OffsetUniverse`)
+
+🔲 Clean up helper methods: Methods that require the `OffsetServer` to function (i.e. methods that must be called on the authoritative client in a multiplayer environment) should be moved out of the `OffsetUniverse` and into the `OffsetServer`. Currently there is a mix of 'safe' and 'unsafe' methods in the `OffsetUniverse`, for example `TeleportTo` only works on the authoritative client.
+
+🔲 Clean up access modifiers on `OffsetManager` and `OffsetUniverse`
+
+### Transforms
+
+✅ OffsetTransform (Formally FOObject, now also performs tasks of FOObserver)
+
+🔲 ~~TODO: how to 're-discover' offset transforms after they have been moved out of bounds? hash grid? (or: keep a cap on the # of disabled offset transforms and just do an O(n) search on the few left over? could also be sped up with sweep and prune)~~ Changed: Offset Transforms are now destroyed if out of range. If you are being pursued by NPC's they will be offset with you, but if they are out of range they will be despawned. If you need to support Offset Transform persistence the best solution would probably be building your own spawning/persistence system with OffsetAnchors.
+
+✅ Deprecate FOObserver in favor of boolean on OffsetTransform
+
+✅ OffsetAnchor (Formally FOAnchor)
+
+✅ IgnoreOffset
+
+### Example
+
+✅ TestingSetup.unitypackage (test harness, example setup, included in the UPM package)
+
+✅ FishNetDemo.unitypackage (example FishNet demo)
+
+✅ [OffsetDemo](https://github.com/hudmarc/FishNet-FloatingOffset---Car-Controller-Prediction-Test/tree/master) (small singleplayer demo)
+
+### Abstractions
+
+✅ Platform independent lightweight OffsetServer core
+
+### Testing
+
+✅ Rewrite tests to work with new API
+
+✅ Maximize test coverage
+
+✅ Review tests and make sure they are actually testing what they say they are
+
+### Code Quality
+
+✅ Make sure access modifiers are as restrictive as possible (done on core classes)
+
+✅ Remove var keyword where unnecessary
+
+✅ Documentation
+
+✅ Lint everything
+
+🔲 Clean up unity interop on `OffsetManager` and clean up `OffsetManagerNetworking`, both classes are currently too bulky.
