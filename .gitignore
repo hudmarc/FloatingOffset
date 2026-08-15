@@ -46,6 +46,7 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+.vscode
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -82,3 +83,7 @@ crashlytics-build.properties
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Solution artifacts
+.build
+Runtime/Core/obj

@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace FloatingOffset.Runtime
 {
     public static class Functions
@@ -11,6 +9,5 @@ namespace FloatingOffset.Runtime
         /// <param name="scene">The integer to convert.</param>
         /// <returns>The integer in Hex code.</returns>
         public static string ToHex(this int integer) => integer.ToString(HEX);
-        public static PhysicsScene Physics(this GameObject gameObject) => gameObject.scene.GetPhysicsScene();
     }
 }

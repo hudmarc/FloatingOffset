@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    
+    <!-- Redirect build outputs so Unity does not try to import them -->
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../.build/obj/Core/</BaseIntermediateOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../../.build/bin/Core/</OutputPath>
+  </PropertyGroup>
+</Project>
