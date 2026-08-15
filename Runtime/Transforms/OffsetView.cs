@@ -17,7 +17,7 @@ namespace FloatingOffset.Runtime
         public Action OnOffset;
         void Start()
         {
-            if (enabled && !registered)
+            if (enabled && !registered && transform.parent == null)
             {
                 universe.manager.RegisterView(this);
                 registered = true;
