@@ -111,7 +111,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForFixedUpdate();
             }
 
-            Vector3d position = Mathd.toVector3d(view.transform.position);
+            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
 
             yield return new WaitForSeconds(2);
             Debug.Log("Starting test");
@@ -123,7 +123,7 @@ namespace FloatingOffset.Runtime
             {
                 Vector3 delta = new Vector3(val, val, val);
                 view.transform.position += delta;
-                position += Mathd.toVector3d(delta);
+                position += UnityFunctions.toVector3d(delta);
 
                 if (i < 21 && (val * 2) > 0)
                     val *= 2;
@@ -165,7 +165,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = Mathd.toVector3d(view.transform.position);
+            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -174,7 +174,7 @@ namespace FloatingOffset.Runtime
             {
                 Vector3 delta = (i % 2 == 0 ? -1 : 1) * OFFSET_DISTANCE * Vector3.right;
                 view.transform.position += delta;
-                position += Mathd.toVector3d(delta);
+                position += UnityFunctions.toVector3d(delta);
 
                 yield return new WaitForFixedUpdate();
 
@@ -215,7 +215,7 @@ namespace FloatingOffset.Runtime
             Vector3d[] expectedPositions = new Vector3d[8];
             for (int i = 0; i < 8; i++)
             {
-                expectedPositions[i] = Mathd.toVector3d(views[i].transform.position);
+                expectedPositions[i] = UnityFunctions.toVector3d(views[i].transform.position);
             }
 
             yield return new WaitForSeconds(2);
@@ -235,7 +235,7 @@ namespace FloatingOffset.Runtime
                 {
                     Vector3 delta = new Vector3(val, val, val);
                     currentView.transform.position += delta;
-                    expectedPositions[viewIndex] += Mathd.toVector3d(delta);
+                    expectedPositions[viewIndex] += UnityFunctions.toVector3d(delta);
 
                     val *= 2;
 
@@ -463,7 +463,7 @@ namespace FloatingOffset.Runtime
                     if (test.GetRealPosition() != Vector3d.zero)
                     {
                         Vector3d offset = universe.server.GetSceneOffset(test.gameObject.scene);
-                        test.transform.position = Mathd.RealToUnity(Vector3d.zero, offset);
+                        test.transform.position = UnityFunctions.RealToUnity(Vector3d.zero, offset);
                     }
                 }
                 else

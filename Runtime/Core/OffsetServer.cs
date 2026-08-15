@@ -141,7 +141,7 @@ namespace FloatingOffset.Runtime
         {
             if (view_positions.Length < count)
             {
-                int newSize = Mathd.GetNextPowerOfTwo(count);
+                int newSize = Functions.GetNextPowerOfTwo(count);
                 Array.Resize(ref view_positions, newSize);
                 Array.Resize(ref view_scene_indexes, newSize);
                 Array.Resize(ref union_counts, newSize);
@@ -352,12 +352,12 @@ namespace FloatingOffset.Runtime
                     if (winner.winner_index == i)
                     {
                         Vector3d average = union_sums[rep] / (double)union_counts[rep];
-                        if ((average - scenes.GetOffsetAt(winner.scene_index)).sqrMagnitude > JoinDistanceSquared)
+                        if ((average - scenes.GetOffsetAt(winner.scene_index)).squaredMagnitude > JoinDistanceSquared)
                             scenes.Offset(scene, average);
                     }
                 }
                 // transfer with hysteresis
-                else if ((view_positions[i] - scenes.GetOffsetAt(view_scene_indexes[i])).sqrMagnitude > SceneRadiusSquared)
+                else if ((view_positions[i] - scenes.GetOffsetAt(view_scene_indexes[i])).squaredMagnitude > SceneRadiusSquared)
                 {
                     // request new scenes for stragglers who are not part of a union or unions without assigned scenes
                     // if we find an empty scene, great! we return it.
@@ -439,9 +439,9 @@ namespace FloatingOffset.Runtime
                         onSceneReady?.Invoke(scene);
                     });
                 }
-                else if (scenes.Count > Mathd.GetNextPowerOfTwo(scenes.Capacity))
+                else if (scenes.Count > Functions.GetNextPowerOfTwo(scenes.Capacity))
                 {
-                    throw new Exception($"Exceeded maximum number of active Offset Scenes! Limit: {MaxScenes} LF: {scenes.Count}:{scenes.Capacity} Hard limit: {Mathd.GetNextPowerOfTwo(scenes.Capacity)}");
+                    throw new Exception($"Exceeded maximum number of active Offset Scenes! Limit: {MaxScenes} LF: {scenes.Count}:{scenes.Capacity} Hard limit: {Functions.GetNextPowerOfTwo(scenes.Capacity)}");
                 }
 
                 return false;
@@ -460,7 +460,7 @@ namespace FloatingOffset.Runtime
         {
             TSceneKey origin = offsetObject.GetSceneKey();
             Vector3d offset = scenes.GetOffset(origin);
-            if ((offset + offsetObject.GetEnginePosition() - real_position).sqrMagnitude < JoinDistanceSquared)
+            if ((offset + offsetObject.GetEnginePosition() - real_position).squaredMagnitude < JoinDistanceSquared)
             {
                 offsetObject.SetEnginePosition(real_position - offset);
                 return;

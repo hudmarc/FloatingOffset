@@ -40,11 +40,11 @@ namespace FloatingOffset.Runtime
         protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, IOffsettable<Scene>[] offsettables)
         {
             Vector3d real_difference = old_offset - new_offset;
-            Vector3 difference = Mathd.toVector3(real_difference);
+            Vector3 difference = UnityFunctions.toVector3(real_difference);
 
             MoveRootTransforms(difference, scene);
 
-            Vector3 remainder = Mathd.toVector3(real_difference - Mathd.toVector3d(difference));
+            Vector3 remainder = UnityFunctions.toVector3(real_difference - UnityFunctions.toVector3d(difference));
 
             if (remainder.sqrMagnitude > 0.0f)
                 MoveRootTransforms(remainder, scene);

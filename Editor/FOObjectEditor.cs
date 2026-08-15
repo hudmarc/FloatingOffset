@@ -111,7 +111,7 @@ namespace FloatingOffset.Editor
                 }
 
                 sceneOffset = universe.manager.GetOffset(t.gameObject.scene);
-                Vector3d position = sceneOffset + Mathd.toVector3d(t.position);
+                Vector3d position = sceneOffset + UnityFunctions.toVector3d(t.position);
 
                 if (lastTargetId != t.GetInstanceID())
                 {

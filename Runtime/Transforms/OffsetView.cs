@@ -37,11 +37,11 @@ namespace FloatingOffset.Runtime
         /// The real position of this OffsetView in its Offset Universe.
         /// </summary>
         /// <returns>The real position.</returns>
-        public Vector3d GetRealPosition() => Mathd.UnityToReal(transform.position, GetOffset());
+        public Vector3d GetRealPosition() => UnityFunctions.UnityToReal(transform.position, GetOffset());
         private Vector3d GetOffset() => universe.manager.GetOffset(gameObject.scene);
         public bool IsValid() => isValid;
 
-        Vector3d IOffsetObject<Scene>.GetEnginePosition() => Mathd.toVector3d(transform.position);
+        Vector3d IOffsetObject<Scene>.GetEnginePosition() => UnityFunctions.toVector3d(transform.position);
         Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
         void IOffsetObject<Scene>.SetSceneKey(Scene key)
         {
@@ -50,7 +50,7 @@ namespace FloatingOffset.Runtime
             OnOffset?.Invoke();
         }
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
-        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = Mathd.toVector3(position);
+        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = UnityFunctions.toVector3(position);
 
     }
 }

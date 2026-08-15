@@ -34,18 +34,18 @@ namespace FloatingOffset.Runtime
             universe.manager.RegisterOffsettable(this);
 
             Vector3d current_scene_offset = universe.manager.GetOffset(scene);
-            transform.position = Mathd.toVector3(realPosition - current_scene_offset);
+            transform.position = UnityFunctions.toVector3(realPosition - current_scene_offset);
 
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
             Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}");
 
-            transform.position = Mathd.toVector3(realPosition - new_offset);
+            transform.position = UnityFunctions.toVector3(realPosition - new_offset);
         }
         public void SetRealPosition(Vector3d new_position)
         {
-            transform.position = Mathd.toVector3(new_position - realPosition);
+            transform.position = UnityFunctions.toVector3(new_position - realPosition);
             realPosition = new_position;
         }
 

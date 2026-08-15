@@ -124,8 +124,8 @@ namespace FloatingOffset.Editor.Tests
             _enginePosition = Vector3.zero;
         }
 
-        public Vector3d GetEnginePosition() => Mathd.toVector3d(_enginePosition);
-        public void SetEnginePosition(Vector3d position) => _enginePosition = Mathd.toVector3(position);
+        public Vector3d GetEnginePosition() => UnityFunctions.toVector3d(_enginePosition);
+        public void SetEnginePosition(Vector3d position) => _enginePosition = UnityFunctions.toVector3(position);
 
         public int GetSceneKey() => _sceneKey;
         public void SetSceneKey(int key) => _sceneKey = key;
