@@ -50,6 +50,7 @@ namespace FloatingOffset.Runtime
         public override bool Equals(object obj) => obj is Vector3d other && Equals(other);
         public bool Equals(Vector3d other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
         public static double SquaredMagnitude(Vector3d v) => v.x * v.x + v.y * v.y + v.z * v.z;
-        public static double Distance(Vector3d a,Vector3d b) => Math.Sqrt(Vector3d.SquaredMagnitude(b - a));
+        public static double Distance(Vector3d a, Vector3d b) => Magnitude(b - a);
+        public static double Magnitude(Vector3d v) => Math.Sqrt(Vector3d.SquaredMagnitude(v));
     }
 }

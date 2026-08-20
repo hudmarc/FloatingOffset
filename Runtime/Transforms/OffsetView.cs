@@ -34,6 +34,11 @@ namespace FloatingOffset.Runtime
         [Obsolete("Use TeleportTo on the OffsetUniverse")]
         public void SetRealPositionApproximate(Vector3d position) { }
         /// <summary>
+        /// Alias for <code>universe.TeleportTo(view, position);</code>
+        /// </summary>
+        /// <param name="position"></param>
+        public void TeleportTo(Vector3d position) => universe.TeleportTo(this, position);
+        /// <summary>
         /// The real position of this OffsetView in its Offset Universe.
         /// </summary>
         /// <returns>The real position.</returns>

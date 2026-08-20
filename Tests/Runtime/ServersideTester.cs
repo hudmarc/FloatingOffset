@@ -125,19 +125,19 @@ public class ServersideTester
 
         Debug.Log($"Waiting up to {WAIT_FOR_CLIENT_TIMEOUT} seconds for a manual client to connect...");
 
-        OffsetTransform serverView = null;
-        OffsetTransform clientView = null;
+        OffsetView serverView = null;
+        OffsetView clientView = null;
         float timer = 0f;
 
         // 2. Poll for the required state rather than waiting a rigid amount of time.
         while (timer < WAIT_FOR_CLIENT_TIMEOUT)
         {
-            var views = UnityEngine.Object.FindObjectsOfType<OffsetTransform>();
+            var views = UnityEngine.Object.FindObjectsOfType<OffsetView>();
 
             // Wait until we have at least 2 views (Host + Client)
             if (views.Length >= 2)
             {
-                foreach (OffsetTransform view in views)
+                foreach (OffsetView view in views)
                 {
                     if (view.TryGetComponent<NetworkObject>(out var networkObject))
                     {

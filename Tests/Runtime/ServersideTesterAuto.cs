@@ -101,13 +101,13 @@ namespace FloatingOffset.Runtime
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Step; Error (mm);Error at Origin (meters); Distance; Delta");
 
-            OffsetTransform view = null;
-            OffsetTransform origin = null;
+            OffsetView view = null;
+            OffsetView origin = null;
 
             while (view == null || origin == null)
             {
                 view = FindView();
-                origin = GameObject.Find("Origin")?.GetComponent<OffsetTransform>();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetView>();
                 yield return new WaitForFixedUpdate();
             }
 
@@ -133,7 +133,7 @@ namespace FloatingOffset.Runtime
 
                 yield return new WaitForEndOfFrame();
 
-                if (view.transform.position.x > universe.RebaseCriteria)
+                if (view.transform.position.x > universe.MinimumJoinDistance)
                 {
                     Debug.LogWarning($"Rebase not working properly? Was {view.transform.position.x}");
                     yield return new WaitForEndOfFrame();
@@ -155,13 +155,13 @@ namespace FloatingOffset.Runtime
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Step; Error (mm);Error At Origin (meters); Distance From Origin; Position Before Rebase");
 
-            OffsetTransform view = null;
-            OffsetTransform origin = null;
+            OffsetView view = null;
+            OffsetView origin = null;
 
             while (view == null || origin == null)
             {
                 view = FindView();
-                origin = GameObject.Find("Origin")?.GetComponent<OffsetTransform>();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetView>();
                 yield return new WaitForSeconds(1);
             }
 
@@ -194,8 +194,8 @@ namespace FloatingOffset.Runtime
         [UnityTest]
         public IEnumerator MultipleViewsSameClient()
         {
-            OffsetTransform[] views = new OffsetTransform[8];
-            OffsetTransform initialView = null;
+            OffsetView[] views = new OffsetView[8];
+            OffsetView initialView = null;
 
             while (initialView == null)
             {
@@ -208,7 +208,7 @@ namespace FloatingOffset.Runtime
 
             for (int i = 1; i < views.Length; i++)
             {
-                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetTransform>();
+                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetView>();
                 networkManager.ServerManager.Spawn(views[i].GetComponent<NetworkObject>());
             }
 
@@ -229,7 +229,7 @@ namespace FloatingOffset.Runtime
             {
 
                 int viewIndex = i % views.Length;
-                OffsetTransform currentView = views[viewIndex];
+                OffsetView currentView = views[viewIndex];
 
                 if (currentView.IsValid())
                 {
@@ -259,24 +259,24 @@ namespace FloatingOffset.Runtime
         }
 
         [UnityTest]
-        public IEnumerator OffsetTransformGroupChange()
+        public IEnumerator OffsetViewGroupChange()
         {
-            OffsetTransform[] views = new OffsetTransform[2];
-            OffsetTransform initialView = null;
-            OffsetTransform staticObject = null;
+            OffsetView[] views = new OffsetView[2];
+            OffsetView initialView = null;
+            OffsetView staticObject = null;
 
             // 1. Find the initial view and the static object
             while (initialView == null || staticObject == null)
             {
-                OffsetTransform[] objects = UnityEngine.Object.FindObjectsOfType<OffsetTransform>();
+                OffsetView[] objects = UnityEngine.Object.FindObjectsOfType<OffsetView>();
 
                 foreach (var obj in objects)
                 {
-                    if (obj.isView && initialView == null)
+                    if (initialView == null)
                     {
                         initialView = obj;
                     }
-                    else if (!obj.isView && staticObject == null)
+                    else
                     {
                         staticObject = obj;
                     }
@@ -290,7 +290,7 @@ namespace FloatingOffset.Runtime
             // 2. Instantiate and spawn the remaining views (views[1] in this case)
             for (int i = 1; i < views.Length; i++)
             {
-                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetTransform>();
+                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetView>();
                 networkManager.ServerManager.Spawn(views[i].GetComponent<NetworkObject>());
             }
 
@@ -298,14 +298,14 @@ namespace FloatingOffset.Runtime
             Debug.Log("Starting test");
 
             // 3. Execute test logic
-            views[0].SetRealPositionApproximate(Vector3d.right * OFFSET_DISTANCE);
-            views[1].SetRealPositionApproximate(Vector3d.left * OFFSET_DISTANCE);
+            views[0].TeleportTo(Vector3d.right * OFFSET_DISTANCE);
+            views[1].TeleportTo(-Vector3d.right * OFFSET_DISTANCE);
 
             yield return new WaitForEndOfFrame();
             yield return null;
 
-            views[0].SetRealPositionApproximate(Vector3d.zero);
-            views[1].SetRealPositionApproximate(Vector3d.zero);
+            views[0].TeleportTo(Vector3d.zero);
+            views[1].TeleportTo(Vector3d.zero);
 
             bool together = true;
 
@@ -313,8 +313,8 @@ namespace FloatingOffset.Runtime
             {
                 if (views[0].IsValid() && views[1].IsValid())
                 {
-                    views[0].SetRealPositionApproximate(Vector3d.right * (together ? 0 : OFFSET_DISTANCE));
-                    views[1].SetRealPositionApproximate(Vector3d.left * (together ? 0 : OFFSET_DISTANCE));
+                    views[0].TeleportTo(Vector3d.right * (together ? 0 : OFFSET_DISTANCE));
+                    views[1].TeleportTo(-Vector3d.right * (together ? 0 : OFFSET_DISTANCE));
 
                     yield return new WaitForEndOfFrame();
 
@@ -333,22 +333,22 @@ namespace FloatingOffset.Runtime
         [UnityTest]
         public IEnumerator StragglersVsGroup()
         {
-            OffsetTransform[] views = new OffsetTransform[4];
-            OffsetTransform initialView = null;
-            OffsetTransform staticObject = null;
+            OffsetView[] views = new OffsetView[4];
+            OffsetView initialView = null;
+            OffsetView staticObject = null;
 
             // 1. Find the initial view and the static object efficiently
             while (initialView == null || staticObject == null)
             {
-                OffsetTransform[] objects = UnityEngine.Object.FindObjectsOfType<OffsetTransform>();
+                OffsetView[] objects = UnityEngine.Object.FindObjectsOfType<OffsetView>();
 
                 foreach (var obj in objects)
                 {
-                    if (obj.isView && initialView == null)
+                    if (initialView == null)
                     {
                         initialView = obj;
                     }
-                    else if (!obj.isView && staticObject == null)
+                    else
                     {
                         staticObject = obj;
                     }
@@ -362,7 +362,7 @@ namespace FloatingOffset.Runtime
             // 2. Instantiate and spawn the remaining views (views[1] and views[2] in this case)
             for (int i = 1; i < views.Length; i++)
             {
-                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetTransform>();
+                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetView>();
                 networkManager.ServerManager.Spawn(views[i].GetComponent<NetworkObject>());
             }
 
@@ -403,18 +403,18 @@ namespace FloatingOffset.Runtime
         [UnityTest]
         public IEnumerator MergeTestOffline()
         {
-            OffsetTransform[] views = new OffsetTransform[2];
-            OffsetTransform initialView = null;
-            OffsetTransform controlObject = null;
+            OffsetView[] views = new OffsetView[2];
+            OffsetView initialView = null;
+            OffsetView controlObject = null;
 
             while (initialView == null || controlObject == null)
             {
                 initialView = FindView();
-                OffsetTransform[] objects = UnityEngine.Object.FindObjectsOfType<OffsetTransform>();
+                OffsetView[] objects = UnityEngine.Object.FindObjectsOfType<OffsetView>();
 
                 foreach (var obj in objects)
                 {
-                    if (!obj.isView)
+                    if (controlObject == null)
                     {
                         controlObject = obj;
                     }
@@ -427,7 +427,7 @@ namespace FloatingOffset.Runtime
 
             for (int i = 1; i < views.Length; i++)
             {
-                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetTransform>();
+                views[i] = GameObject.Instantiate(viewGameObject).GetComponent<OffsetView>();
                 networkManager.ServerManager.Spawn(views[i].GetComponent<NetworkObject>());
             }
 
@@ -442,7 +442,7 @@ namespace FloatingOffset.Runtime
         /// <summary>
         /// Extracted logic for the merge test to prevent testing framework confusion.
         /// </summary>
-        private IEnumerator MergeTestLogic(OffsetTransform test, OffsetTransform control)
+        private IEnumerator MergeTestLogic(OffsetView test, OffsetView control)
         {
             test.transform.position = Vector3.zero;
             control.transform.position = Vector3.zero;
@@ -462,7 +462,7 @@ namespace FloatingOffset.Runtime
                     move = new Vector3(((i % 29) * OFFSET_DISTANCE) + i, ((i % 31) * OFFSET_DISTANCE) + i, ((i % 37) * OFFSET_DISTANCE) + i);
                     if (test.GetRealPosition() != Vector3d.zero)
                     {
-                        Vector3d offset = universe.server.GetSceneOffset(test.gameObject.scene);
+                        Vector3d offset = universe.GetOffset(test.gameObject.scene);
                         test.transform.position = UnityFunctions.RealToUnity(Vector3d.zero, offset);
                     }
                 }
@@ -493,18 +493,17 @@ namespace FloatingOffset.Runtime
             }
         }
 
-        private OffsetTransform FindView()
+        private OffsetView FindView()
         {
-            var transforms = UnityEngine.Object.FindObjectsOfType<OffsetTransform>();
-            foreach (OffsetTransform transform in transforms)
+            var transforms = UnityEngine.Object.FindObjectsOfType<OffsetView>();
+            foreach (OffsetView transform in transforms)
             {
-                if (transform.isView)
-                {
-                    return transform;
-                }
+
+                return transform;
+
             }
             return null;
         }
     }
 }
-# endif
+#endif
