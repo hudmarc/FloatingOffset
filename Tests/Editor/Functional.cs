@@ -18,19 +18,11 @@ namespace FloatingOffset.Editor.Tests
             Assert.AreNotEqual(realPosition, offset);
         }
         [Test]
-        public void MaxDistanceBenchmark()
+        public void Vector3dSquaredMagnitudeBenchmark()
         {
             for (int i = 0; i < 100000; i++)
             {
-                UnityFunctions.MaxLengthScalar(new Vector3d(i, i, i));
-            }
-        }
-        [Test]
-        public void Vector3dDistanceBenchmark()
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                Vector3d.Distance(new Vector3d(i, i, i), Vector3d.zero);
+                Vector3d.SquaredMagnitude(new Vector3d(i, i, i));
             }
         }
 

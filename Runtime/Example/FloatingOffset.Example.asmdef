@@ -3,7 +3,8 @@
     "rootNamespace": "FloatingOffset.Runtime.Example",
     "references": [
         "GUID:7c88a4a7926ee5145ad2dfa06f454c67",
-        "GUID:1ce0c3caf2f6b4e3f8d9a72891de43a0"
+        "GUID:1ce0c3caf2f6b4e3f8d9a72891de43a0",
+        "GUID:cbd4e2c6fead246b09193f1f92a0be2a"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

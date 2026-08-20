@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace FloatingOffset.Runtime
 {
     [System.Serializable]
-    public readonly struct Vector3d
+    public readonly struct Vector3d: IEquatable<Vector3d>
     {
         public readonly double x;
         public readonly double y;
@@ -47,8 +47,9 @@ namespace FloatingOffset.Runtime
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in Vector3d lhs, in Vector3d rhs) => !(lhs == rhs);
         public override int GetHashCode() => HashCode.Combine(x, y, z);
-        public override bool Equals(object obj) => obj is Vector3d && Equals(obj);
+        public override bool Equals(object obj) => obj is Vector3d other && Equals(other);
         public bool Equals(Vector3d other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
         public static double SquaredMagnitude(Vector3d v) => v.x * v.x + v.y * v.y + v.z * v.z;
+        public static double Distance(Vector3d a,Vector3d b) => Math.Sqrt(Vector3d.SquaredMagnitude(b - a));
     }
 }

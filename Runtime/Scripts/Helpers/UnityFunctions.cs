@@ -25,13 +25,5 @@ namespace FloatingOffset.Runtime
         /// <param name="offset">The offset of the scene.</param>
         /// <returns></returns>
         public static Vector3d UnityToReal(Vector3 unityPosition, Vector3d offset) => toVector3d(unityPosition) + offset;
-        /// <summary>
-        /// Gets the longest scalar component from the given vector and returns its magnitude. This version operates on Vector3d's.
-        /// </summary>
-        /// <param name="vector">
-        /// The vector whose scalars will be compared.
-        /// </param>
-        /// <returns>The longest scalar component of the vector.</returns>
-        public static double MaxLengthScalar(Vector3d vector) => Mathd.Max(Mathd.Abs(vector.x), Mathd.Abs(vector.y), Mathd.Abs(vector.z));
     }
 }

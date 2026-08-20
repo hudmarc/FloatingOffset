@@ -5,7 +5,7 @@ namespace FloatingOffset.Editor.Tests
 {
     public class Modules
     {
-        private const bool SKIP_BENCH = true;
+        private const bool SKIP_BENCH = false;
 
         [Test]
         public void HashGridInitialization()

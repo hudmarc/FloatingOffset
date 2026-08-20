@@ -1,5 +1,6 @@
 {
     "name": "FloatingOffset.Runtime.Core",
+    "rootNamespace": "FloatingOffset.Runtime.Core",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
