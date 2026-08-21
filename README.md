@@ -1,3 +1,7 @@
+<img width="104" height="20" alt="build - passing" src="https://github.com/user-attachments/assets/1f0801be-dd19-4172-a41b-35589ee96643" />
+<img width="96" height="20" alt="badge_shieldsio_linecoverage_yellow" src="https://github.com/user-attachments/assets/ba324f0a-8554-4a58-884a-8d983a2bd803" />
+
+
 # Quickstart (FishNet)
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
