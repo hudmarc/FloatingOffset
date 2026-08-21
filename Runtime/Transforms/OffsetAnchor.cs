@@ -22,7 +22,6 @@ namespace FloatingOffset.Runtime
             initialized = true;
             scene = gameObject.scene;
             universe.manager.RegisterOffsettable(this);
-
         }
         void Start()
         {
@@ -33,13 +32,24 @@ namespace FloatingOffset.Runtime
             scene = gameObject.scene;
             universe.manager.RegisterOffsettable(this);
 
+
             Vector3d current_scene_offset = universe.manager.GetOffset(scene);
             transform.position = UnityFunctions.toVector3(realPosition - current_scene_offset);
 
         }
+        void OnDestroy()
+        {
+            Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
+            universe.manager.UnregisterOffsettable(this);
+        }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}");
+            if (this == null)
+            {
+                Debug.LogWarning("Tried to call Offset on non-existent Anchor");
+                return;
+            }
+            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}"); //why does this return
 
             transform.position = UnityFunctions.toVector3(realPosition - new_offset);
         }

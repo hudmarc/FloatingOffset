@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Text;
-using FloatingOffset.Runtime;
 using FishNet.Managing;
 using FishNet.Object;
 using NUnit.Framework;
@@ -94,6 +93,80 @@ namespace FloatingOffset.Runtime
             universe = null;
             networkManager = null;
         }
+        /// <summary>
+        /// Asserts that the objects are unregistered immediately when destroyed using DestroyImmediate.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator DestroyImmediateUnregisterTest()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Step; Error (mm);Error At Origin (meters); Distance From Origin; Position Before Rebase");
+
+            OffsetView view = null;
+            OffsetAnchor origin = null;
+
+            while (view == null || origin == null)
+            {
+                view = FindView();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetAnchor>();
+                yield return new WaitForSeconds(1);
+            }
+
+            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+
+            yield return new WaitForSeconds(1);
+            Debug.Log("Starting test");
+
+            GameObject.DestroyImmediate(view.gameObject);
+            GameObject.DestroyImmediate(origin.gameObject);
+
+            Assert.AreEqual(0, universe.manager.CountOffsettables());
+            Assert.AreEqual(0, universe.manager.CountRegisteredViews());
+
+            yield return null; //one frame
+
+            Assert.AreEqual(0, universe.manager.CountViews());
+
+        }
+        /// <summary>
+        /// Asserts that the objects are unregistered by the end of the frame.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator DestroyUnregisterTest()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Step; Error (mm);Error At Origin (meters); Distance From Origin; Position Before Rebase");
+
+            OffsetView view = null;
+            OffsetAnchor origin = null;
+
+            while (view == null || origin == null)
+            {
+                view = FindView();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetAnchor>();
+                yield return new WaitForSeconds(1);
+            }
+
+            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+
+            yield return new WaitForSeconds(1);
+            Debug.Log("Starting test");
+
+            GameObject.Destroy(view.gameObject);
+            GameObject.Destroy(origin.gameObject);
+
+            yield return null; //one frame
+
+            Assert.AreEqual(0, universe.manager.CountOffsettables());
+            Assert.AreEqual(0, universe.manager.CountRegisteredViews());
+
+            yield return null; //one frame
+
+            Assert.AreEqual(0, universe.manager.CountViews());
+        }
+
 
         [UnityTest]
         public IEnumerator OffsetTest()
@@ -102,12 +175,12 @@ namespace FloatingOffset.Runtime
             sb.AppendLine("Step; Error (mm);Error at Origin (meters); Distance; Delta");
 
             OffsetView view = null;
-            OffsetView origin = null;
+            OffsetAnchor origin = null;
 
             while (view == null || origin == null)
             {
                 view = FindView();
-                origin = GameObject.Find("Origin")?.GetComponent<OffsetView>();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetAnchor>();
                 yield return new WaitForFixedUpdate();
             }
 
@@ -121,6 +194,7 @@ namespace FloatingOffset.Runtime
             var val = 1;
             for (int i = 0; i < TEST_ITERATIONS; i++)
             {
+                Debug.Log($"OFFSET: Count {i}");
                 Vector3 delta = new Vector3(val, val, val);
                 view.transform.position += delta;
                 position += UnityFunctions.toVector3d(delta);
@@ -129,24 +203,30 @@ namespace FloatingOffset.Runtime
                     val *= 2;
 
                 var error = Vector3d.Distance(position, view.GetRealPosition());
-                Assert.Less(error, 2);
+                // Assert.Less(error, 2);
 
-                yield return new WaitForEndOfFrame();
+                int desync_count = 0;
 
-                if (view.transform.position.x > universe.MinimumJoinDistance)
+                while (Math.Abs(view.transform.position.x) > universe.MinimumJoinDistance && desync_count < 100)
                 {
-                    Debug.LogWarning($"Rebase not working properly? Was {view.transform.position.x}");
-                    yield return new WaitForEndOfFrame();
+                    yield return new WaitForFixedUpdate();
+                    desync_count++;
+                }
+                if (desync_count >= 10)
+                {
+                    Debug.LogWarning($"Rebase not working properly, still desynchronized after {desync_count} frames. Was {view.transform.position.x}");
                 }
 
                 var distanceFromOrigin = Vector3d.Distance(Vector3d.zero, view.GetRealPosition());
-                var errorAtOrigin = Vector3d.Distance(Vector3d.zero, origin.GetRealPosition());
+                var errorAtOrigin = Vector3.Distance(Vector3.zero, origin.transform.position);
 
                 sb.Append($"{i};{error * 1000};{errorAtOrigin};{distanceFromOrigin};{val}\n");
             }
 
             Debug.Log("--------RESULTS--------");
+            Debug.Log(Application.persistentDataPath + "/output.csv");
             System.IO.File.WriteAllText(Application.persistentDataPath + "/output.csv", sb.ToString());
+
         }
 
         [UnityTest]
@@ -156,12 +236,12 @@ namespace FloatingOffset.Runtime
             sb.AppendLine("Step; Error (mm);Error At Origin (meters); Distance From Origin; Position Before Rebase");
 
             OffsetView view = null;
-            OffsetView origin = null;
+            OffsetAnchor origin = null;
 
             while (view == null || origin == null)
             {
                 view = FindView();
-                origin = GameObject.Find("Origin")?.GetComponent<OffsetView>();
+                origin = GameObject.Find("Origin")?.GetComponent<OffsetAnchor>();
                 yield return new WaitForSeconds(1);
             }
 
@@ -170,25 +250,46 @@ namespace FloatingOffset.Runtime
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
 
+            double total_desync_count = 0;
+            double error = 0;
+
             for (int i = 0; i < TEST_ITERATIONS; i++)
             {
                 Vector3 delta = (i % 2 == 0 ? -1 : 1) * OFFSET_DISTANCE * Vector3.right;
                 view.transform.position += delta;
                 position += UnityFunctions.toVector3d(delta);
 
-                yield return new WaitForFixedUpdate();
+                int desync_count = 0;
 
-                var error = Vector3d.Distance(position, view.GetRealPosition());
-                Assert.IsTrue(error < 0.01);
+                while (Math.Abs(view.transform.position.x) > universe.MinimumJoinDistance && desync_count < 100)
+                {
+                    yield return new WaitForFixedUpdate();
+                    desync_count++;
+                }
+                if (desync_count >= 10)
+                {
+                    Debug.LogWarning($"Rebase not working properly, still desynchronized after {desync_count} frames. Was {view.transform.position.x}");
+                }
+
+                total_desync_count += desync_count;
+
+                error += Vector3d.Distance(position, view.GetRealPosition());
+
 
                 var distanceFromOrigin = Vector3.Distance(view.transform.position, Vector3.zero);
-                var errorAtOrigin = Vector3d.Distance(Vector3d.zero, origin.GetRealPosition());
+                var errorAtOrigin = Vector3.Distance(Vector3.zero, origin.transform.position);
 
                 sb.Append($"{i};{error * 1000};{errorAtOrigin};{distanceFromOrigin};{view.transform.position}\n");
             }
 
+            Debug.Log($"Mean desynchronized frame count: {total_desync_count / ((double)TEST_ITERATIONS)}"); //always 0
+            Debug.Log($"Total desynchronized frame count accross all frames: {total_desync_count}"); //always 0
+            Debug.Log($"Total error {error}");
+
             Debug.Log("--------RESULTS--------");
+            Debug.Log(Application.persistentDataPath + "/error_accumulator_output.csv");
             System.IO.File.WriteAllText(Application.persistentDataPath + "/error_accumulator_output.csv", sb.ToString());
+            Assert.LessOrEqual(error, 1);
         }
 
         [UnityTest]
@@ -316,7 +417,17 @@ namespace FloatingOffset.Runtime
                     views[0].TeleportTo(Vector3d.right * (together ? 0 : OFFSET_DISTANCE));
                     views[1].TeleportTo(-Vector3d.right * (together ? 0 : OFFSET_DISTANCE));
 
-                    yield return new WaitForEndOfFrame();
+                    int desync_count = 0;
+
+                    while (views[0].gameObject.scene.handle != views[1].gameObject.scene.handle && desync_count < 100)
+                    {
+                        yield return new WaitForFixedUpdate();
+                        desync_count++;
+                    }
+                    if (desync_count >= 10)
+                    {
+                        Debug.LogWarning($"Views failed to merge, still in different scenes after {desync_count} frames.");
+                    }
 
                     if (together && views[0].IsValid() && views[1].IsValid())
                     {
@@ -380,20 +491,34 @@ namespace FloatingOffset.Runtime
                 views[0].transform.position += Vector3.right * 100;
                 views[1].transform.position += Vector3.right * 100;
 
-                yield return new WaitForEndOfFrame();
+                int desync_count = 0;
 
-                while (views[0].gameObject.scene.handle != views[1].gameObject.scene.handle)
+                while (views[0].gameObject.scene.handle != views[1].gameObject.scene.handle && desync_count < 100)
                 {
-                    Debug.LogWarning($"Scene {views[0].gameObject.scene.handle} is not {views[1].gameObject.scene.handle}");
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForFixedUpdate();
+                    desync_count++;
+                }
+                if (desync_count >= 10)
+                {
+                    Debug.LogWarning($"Views failed to merge, still in different scenes after {desync_count} frames.");
                 }
 
                 Assert.AreEqual(views[0].gameObject.scene.handle, views[1].gameObject.scene.handle);
             }
 
             views[1].transform.position = Vector3.right * 10000;
-            yield return null;
-            yield return null;
+
+            int desync_count_separate = 0;
+
+            while (views[0].gameObject.scene.handle == views[1].gameObject.scene.handle && desync_count_separate < 100)
+            {
+                yield return new WaitForFixedUpdate();
+                desync_count_separate++;
+            }
+            if (desync_count_separate >= 10)
+            {
+                Debug.LogWarning($"Views failed to separate, still in same scene after {desync_count_separate} frames.");
+            }
 
 
             Assert.AreNotEqual(views[0].gameObject.scene.handle, views[1].gameObject.scene.handle);

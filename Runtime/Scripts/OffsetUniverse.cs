@@ -46,10 +46,8 @@ namespace FloatingOffset.Runtime
                 this.manager = manager;
         }
 
-        public void RegisterManager(OffsetManager manager)
-        {
-            this.manager = manager;
-        }
+        public void RegisterManager(OffsetManager manager) => this.manager = manager;
+
         /// <summary>
         /// Alias for <code>manager.RegisterOffsettable(offsettable);</code>
         /// </summary>

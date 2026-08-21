@@ -53,11 +53,6 @@ namespace FloatingOffset.Runtime
             /// <returns></returns>
             TSceneKey GetSceneKey();
             /// <summary>
-            /// Sets this object's scene.
-            /// </summary>
-            /// <param name="key"></param>
-            void SetSceneKey(TSceneKey key);
-            /// <summary>
             /// Whether this OffsetView is valid (i.e. not destroyed)
             /// </summary>
             /// <returns></returns>

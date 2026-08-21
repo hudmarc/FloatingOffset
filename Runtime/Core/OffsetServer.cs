@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using FloatingOffset.Runtime.Types;
 
 namespace FloatingOffset.Runtime
@@ -92,6 +93,9 @@ namespace FloatingOffset.Runtime
             scenes.RemoveView(offsettable.GetSceneKey());
             views_to_remove.Add(offsettable);
         }
+
+        public int RegisteredViewCount() => views.Count - views_to_remove.Count;
+        public int ActualViewCount() => views.Count;
 
         private Vector3d[] view_positions = new Vector3d[8];
         private int[] view_scene_indexes = new int[8];
@@ -331,10 +335,6 @@ namespace FloatingOffset.Runtime
             // Lock in the final scene
             winners[scene_champion_union] = new SceneWinner(current_scene, scene_champion_count, scene_champion_union);
 
-
-
-
-
             // Transfer all views that are not in the right scene && compute merges
             for (int i = 0; i < view_count; i++)
             {
@@ -381,8 +381,6 @@ namespace FloatingOffset.Runtime
                 // updateOffset does nothing if the offset is already updated.
                 handler.UpdateOffset(scenes.GetSceneAt(i));
             }
-
-            // MarkTime(10);
         }
 
 

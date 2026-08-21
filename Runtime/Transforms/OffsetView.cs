@@ -48,12 +48,6 @@ namespace FloatingOffset.Runtime
 
         Vector3d IOffsetObject<Scene>.GetEnginePosition() => UnityFunctions.toVector3d(transform.position);
         Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
-        void IOffsetObject<Scene>.SetSceneKey(Scene key)
-        {
-            OnPreOffset?.Invoke();
-            SceneManager.MoveGameObjectToScene(gameObject, key);
-            OnOffset?.Invoke();
-        }
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
         void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = UnityFunctions.toVector3(position);
 

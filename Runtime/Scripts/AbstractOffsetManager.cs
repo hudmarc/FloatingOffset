@@ -1,13 +1,14 @@
 using UnityEngine.SceneManagement;
 using UnityEngine;
 using FloatingOffset.Runtime.Types;
+using System;
 
 namespace FloatingOffset.Runtime
 {
     /// <summary>
     /// The offset manager bootstraps the OffsetServer. Disable it on network clients.
     /// </summary>
-    public class OffsetManager : OffsetBehaviour
+    public abstract class OffsetManager : OffsetBehaviour
     {
         [SerializeField]
         protected OffsetSceneHandler handler;
@@ -29,10 +30,8 @@ namespace FloatingOffset.Runtime
         /// <summary>
         /// Runs the Process loop on the OffsetUniverse.
         /// </summary>
-        protected void Process()
-        {
-            universe.server.Process();
-        }
+        protected void Process() => universe.server.Process();
+
         /// <summary>
         /// Called immediately after RegisterView is called.
         /// </summary>
@@ -48,6 +47,14 @@ namespace FloatingOffset.Runtime
         public void RegisterOffsettable(IOffsettable<Scene> offsettable)
         {
             handler.RegisterOffsettable(offsettable, offsettable.GetSceneKey());
+        }
+        /// <summary>
+        /// Unregister the given Offsettable.
+        /// </summary>
+        /// <param name="offsettable">The Offsettable to register.</param>
+        public void UnregisterOffsettable(IOffsettable<Scene> offsettable)
+        {
+            handler.UnregisterOffsettable(offsettable, offsettable.GetSceneKey());
         }
         /// <summary>
         /// Gets the offset of the corresponding scene. Only callable on the host/server.
@@ -77,5 +84,11 @@ namespace FloatingOffset.Runtime
                     Debug.Log($"Teleported {view.name} to {position}");
             }
         }
+
+        public int CountOffsettables() => handler.OffsettableCount();
+
+        public int CountRegisteredViews() => universe.server.RegisteredViewCount();
+
+        public int CountViews() => universe.server.ActualViewCount();
     }
 }

@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using FishNet;
+using FishNet.Managing.Scened;
 using FishNet.Object;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
@@ -14,9 +17,24 @@ namespace FloatingOffset.Runtime.Example
         {
             var key = scene.key;
             if (!current_offsets.ContainsKey(key))
-                current_offsets.Add(key, Vector3d.zero);
+            {
+                AddOffset(key);
+            }
             else if (scene.offset == current_offsets[scene.key])
                 return;
+            if (universe.logging)
+                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{current_offsets[key]:#.#}->{scene.offset:#.#} ");
+            Vector3d old_offset = current_offsets[key];
+            current_offsets[key] = scene.offset;
+
+            if (offsettables.TryGetValue(scene.key, out List<IOffsettable<Scene>> list))
+            {
+                offsetter.Offset(old_offset, current_offsets[key], scene.key, list.ToArray());
+            }
+            else
+            {
+                offsetter.Offset(old_offset, current_offsets[key], scene.key);
+            }
 
             var objects = scene.key.GetRootGameObjects();
 
@@ -35,8 +53,8 @@ namespace FloatingOffset.Runtime.Example
                     };
                     if (universe.logging)
                         Debug.Log("Sent broadcast to client");
-
-                    nob.Owner.Broadcast(responseMsg);
+                    if (nob.Owner.IsValid)
+                        nob.Owner.Broadcast(responseMsg);
                 }
             }
         }
@@ -45,16 +63,18 @@ namespace FloatingOffset.Runtime.Example
         {
             Vector3d absoluteRealPos = current_offsets[from] + offsetObject.GetEnginePosition();
 
-            offsetObject.SetSceneKey(to);
+            MonoBehaviour offsetMono = (MonoBehaviour)offsetObject;
+
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
 
             // Calculate the exact local Unity position required for the new scene
             // Because Real = Unity + Offset, therefore Unity = Real - Offset
             if (reposition)
             {
                 Vector3d newUnityPos = absoluteRealPos - current_offsets[to];
-
                 offsetObject.SetEnginePosition(newUnityPos);
             }
+
             Scene main_scene = mainView.GetSceneKey();
 
             if (offsetObject == mainView)
@@ -68,12 +88,15 @@ namespace FloatingOffset.Runtime.Example
                 SetSceneVisibility(to, to == main_scene);
             }
 
-
-
             if (universe.logging)
-                Debug.Log($"Transferred {((MonoBehaviour)offsetObject).name} from {from.handle.ToHex()} to {to.handle.ToHex()}");
-            if (((OffsetView)offsetObject).TryGetComponent(out NetworkObject nob))
+                Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} to {to.handle.ToHex()}");
+
+            if (offsetMono.TryGetComponent(out NetworkObject nob))
             {
+                SceneLoadData sld = new SceneLoadData(to);
+                // load on target client
+                InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, sld);
+
                 if (!nob.IsOwner)
                 {
                     ReceiveOffsetBroadcast to_msg = new ReceiveOffsetBroadcast
@@ -83,11 +106,11 @@ namespace FloatingOffset.Runtime.Example
                         OffsetZ = current_offsets[to].z
                     };
 
-                    nob.Owner.Broadcast(to_msg); //instruct the owner to offset
+                    if (nob.Owner.IsValid)
+                        nob.Owner.Broadcast(to_msg);
                 }
             }
         }
-
         public new Vector3d GetOffset(Scene scene)
         {
             if (universe.ServerActive)
@@ -107,20 +130,47 @@ namespace FloatingOffset.Runtime.Example
         public void Clone(Scene scene, Action<Scene> onSceneReady)
         {
             float start_time = Time.time;
+            if (!universe.ServerActive)
+            {
+                Debug.LogError("Scene cloning must be executed on the server");
+                return;
+            }
+
             if (last_scene == scene)
             {
                 if (universe.logging)
                     Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.handle.ToHex()}");
                 return;
             }
+
+            SceneLoadData sld = new SceneLoadData(scene.name)
+            {
+                Options = new LoadOptions
+                {
+                    AllowStacking = true,
+                    AutomaticallyUnload = false,
+                    LocalPhysics = LocalPhysicsMode.Physics3D
+                }
+            };
+
+            InstanceFinder.SceneManager.LoadConnectionScenes(sld);
+            QueueSceneLoadCallback(onSceneReady);
+
             last_scene = scene;
-            // this is called twice if the editor is unfocused. seems to be a Unity bug.
-            SceneManager.LoadSceneAsync(scene.buildIndex, parameters).completed += (arg) => SetupScene(onSceneReady, start_time);
         }
 
         public void Unload(Scene scene)
         {
-            SceneManager.UnloadSceneAsync(scene);
+            Debug.Log($"Unloading {scene.name}");
+
+            if (!universe.ServerActive)
+            {
+                Debug.LogWarning("Scene unloading must be executed on the server");
+                return;
+            }
+
+            SceneUnloadData sud = new SceneUnloadData(scene);
+            InstanceFinder.SceneManager.UnloadConnectionScenes(sud);
         }
     }
 }

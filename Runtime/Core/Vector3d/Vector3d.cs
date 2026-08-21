@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace FloatingOffset.Runtime
 {
     [System.Serializable]
-    public readonly struct Vector3d: IEquatable<Vector3d>
+    public readonly struct Vector3d : IEquatable<Vector3d>
     {
         public readonly double x;
         public readonly double y;
@@ -52,5 +52,6 @@ namespace FloatingOffset.Runtime
         public static double SquaredMagnitude(Vector3d v) => v.x * v.x + v.y * v.y + v.z * v.z;
         public static double Distance(Vector3d a, Vector3d b) => Magnitude(b - a);
         public static double Magnitude(Vector3d v) => Math.Sqrt(Vector3d.SquaredMagnitude(v));
+        public override string ToString() => $"({Math.Round(x)}, {Math.Round(y)}, {Math.Round(z)})";
     }
 }

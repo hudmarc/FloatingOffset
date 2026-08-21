@@ -6,6 +6,7 @@ using FishNet.Connection;
 using UnityEngine;
 using FloatingOffset.Runtime.Types;
 using UnityEngine.SceneManagement;
+using FishNet;
 
 namespace FloatingOffset.Runtime.Example
 {
@@ -32,12 +33,8 @@ namespace FloatingOffset.Runtime.Example
             universe.RegisterManager(this); //this way clients can still query their real offsets
         }
 
-        private void Physics()
-        {
-            handler.PhysicsProcess((float)networkManager.TimeManager.TickDelta);
-            if (universe.ServerActive)
-                Process();
-        }
+        private void Physics(float delta) => handler.PhysicsProcess(delta);
+
 
         // Called on server
         private void OnStateChange(ServerConnectionStateArgs args)
@@ -46,32 +43,34 @@ namespace FloatingOffset.Runtime.Example
             {
                 Debug.Log("Initialized universe");
                 universe.InitializeWithHandler(this, handler as IOffsetHandler<Scene>);
-            }
-        }
 
-        private void OnEnable()
-        {
-            if (networkManager != null)
-            {
                 // Register Server and Client broadcast listeners
                 networkManager.ServerManager.RegisterBroadcast<RequestOffsetBroadcast>(OnServerReceivedRequest);
                 networkManager.ClientManager.RegisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
 
                 // Subscribe to the client connection state to replace OnStartClient()
-                networkManager.TimeManager.OnTick += Physics;
-            }
-        }
+                networkManager.TimeManager.OnPreTick += Process;
+                networkManager.TimeManager.OnPrePhysicsSimulation += Physics;
 
-        private void OnDisable()
-        {
-            if (networkManager != null)
+                InstanceFinder.SceneManager.OnLoadEnd += OnLoadEnd;
+            }
+            else if (args.ConnectionState == LocalConnectionState.Stopping)
             {
                 // Always unregister to prevent memory leaks!
                 networkManager.ServerManager.UnregisterBroadcast<RequestOffsetBroadcast>(OnServerReceivedRequest);
                 networkManager.ClientManager.UnregisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
 
-                networkManager.TimeManager.OnTick -= Physics;
+                networkManager.TimeManager.OnPreTick -= Process;
+                networkManager.TimeManager.OnPrePhysicsSimulation -= Physics;
+
+                InstanceFinder.SceneManager.OnLoadEnd -= OnLoadEnd;
             }
+        }
+
+        private void OnLoadEnd(FishNet.Managing.Scened.SceneLoadEndEventArgs data)
+        {
+            Debug.Log($"Scene loaded (FishNet)\n{data.ToString()}");
+            handler.OnLoadEnd(data.LoadedScenes);
         }
 
         override protected void OnViewRegistered(OffsetView view)
@@ -94,7 +93,7 @@ namespace FloatingOffset.Runtime.Example
         }
 
         /// <summary>
-        /// executes server-side 
+        /// Executes server-side 
         /// </summary>
         /// <param name="conn"></param>
         /// <param name="msg"></param>

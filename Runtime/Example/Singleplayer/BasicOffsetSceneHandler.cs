@@ -19,7 +19,7 @@ namespace FloatingOffset.Runtime.Example
             var key = scene.key;
             if (!current_offsets.ContainsKey(key))
             {
-                current_offsets.Add(key, Vector3d.zero);
+                AddOffset(key);
             }
             else if (scene.offset == current_offsets[scene.key])
                 return;
@@ -48,7 +48,7 @@ namespace FloatingOffset.Runtime.Example
         {
             Vector3d absoluteRealPos = current_offsets[from] + offsetObject.GetEnginePosition();
 
-            offsetObject.SetSceneKey(to);
+            SceneManager.MoveGameObjectToScene(gameObject, to);
 
             // Calculate the exact local Unity position required for the new scene
             // Because Real = Unity + Offset, therefore Unity = Real - Offset
@@ -93,7 +93,8 @@ namespace FloatingOffset.Runtime.Example
             }
             last_scene = scene;
             // this is called twice if the editor is unfocused. seems to be a Unity bug.
-            SceneManager.LoadSceneAsync(scene.buildIndex, parameters).completed += (arg) => SetupScene(onSceneReady, start_time);
+            SceneManager.LoadSceneAsync(scene.buildIndex, parameters).completed += (arg) => OnLoadEnd(new Scene[] { SceneManager.GetSceneAt(SceneManager.sceneCount - 1) });
+            QueueSceneLoadCallback(onSceneReady);
         }
 
         public void Unload(Scene scene)

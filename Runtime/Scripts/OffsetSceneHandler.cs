@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FloatingOffset.Runtime.Types;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,7 +15,9 @@ namespace FloatingOffset.Runtime
         protected readonly LoadSceneParameters parameters = new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D);
         protected Dictionary<Scene, Vector3d> current_offsets = new Dictionary<Scene, Vector3d>();
         protected Dictionary<Scene, List<IOffsettable<Scene>>> offsettables = new Dictionary<Scene, List<IOffsettable<Scene>>>();
+        private int offsettable_count = 0;
         protected IOffsetObject<Scene> mainView = null;
+        private Scene first_scene;
 #if UNITY_EDITOR
         protected override void Reset()
         {
@@ -45,6 +48,27 @@ namespace FloatingOffset.Runtime
                 offsettables.Add(scene, new List<IOffsettable<Scene>> { offsettable });
             else
                 offsettables[scene].Add(offsettable);
+
+            offsettable_count++;
+        }
+
+        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
+        {
+            if (offsettables.ContainsKey(scene))
+            {
+                offsettables[scene].Remove(offsettable);
+                offsettable_count--;
+            }
+            else
+            {
+                throw new Exception("Offsettable not found in expected scene. Offsettables cannot be moved between scenes.");
+            }
+        }
+        public int OffsettableCount() => offsettable_count;
+        public void AddOffset(Scene scene)
+        {
+            first_scene = scene;
+            current_offsets.Add(scene, Vector3d.zero);
         }
         public virtual Vector3d GetOffset(Scene scene) => current_offsets.ContainsKey(scene) ? current_offsets[scene] : Vector3d.zero;
         public virtual bool HasScene(Scene scene) => current_offsets.ContainsKey(scene);
@@ -64,7 +88,8 @@ namespace FloatingOffset.Runtime
         {
             foreach (var scene in current_offsets.Keys)
             {
-                scene.GetPhysicsScene().Simulate(delta);
+                if (scene.IsValid() && scene != first_scene)
+                    scene.GetPhysicsScene().Simulate(delta);
             }
         }
 
@@ -110,22 +135,35 @@ namespace FloatingOffset.Runtime
             }
         }
 
-        // Runs some setup code on the scene and calls the callback.
-        protected void SetupScene(Action<Scene> onSceneReady, float start_time)
+        Queue<Action<Scene>> readyActions = new Queue<Action<Scene>>();
+
+        public void OnLoadEnd(Scene[] loadedScenes)
         {
-            //fixes a bizarre Unity bug where the "completed" callback from LoadSceneAsync gets called twice under certain circumstances.
-            // offsetGroups.ContainsKey(SceneManager.GetSceneAt(SceneManager.sceneCount - 1)) is causing scenes to NEVER be registered!
-            if (universe.logging)
-                Debug.Log($"setting up scene {SceneManager.GetSceneAt(SceneManager.sceneCount - 1).handle.ToHex()}");
-
-            Scene scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
-
-            SetSceneVisibility(scene, false);
-
-            CullOffsetTransforms(scene);
-
-            // important order of operations: do NOT invoke this before you cull the scene!
-            onSceneReady?.Invoke(scene);
+           
+            foreach (Scene scene in loadedScenes)
+            {
+                Debug.Log($"Loaded scene {scene.GetHashCode().ToHex()}");
+                readyActions.Dequeue()(scene);
+            }
         }
+        public void QueueSceneLoadCallback(Action<Scene> onSceneReady) => readyActions.Enqueue(onSceneReady);
+
+        // Runs some setup code on the scene and calls the callback.
+        // protected void SetupScene(Action<Scene> onSceneReady, float start_time)
+        // {
+        //     //fixes a bizarre Unity bug where the "completed" callback from LoadSceneAsync gets called twice under certain circumstances.
+        //     // offsetGroups.ContainsKey(SceneManager.GetSceneAt(SceneManager.sceneCount - 1)) is causing scenes to NEVER be registered!
+        //     if (universe.logging)
+        //         Debug.Log($"setting up scene {SceneManager.GetSceneAt(SceneManager.sceneCount - 1).handle.ToHex()}");
+
+        //     Scene scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
+
+        //     SetSceneVisibility(scene, false);
+
+        //     CullOffsetTransforms(scene);
+
+        //     // important order of operations: do NOT invoke this before you cull the scene!
+        //     onSceneReady?.Invoke(scene);
+        // }
     }
 }
