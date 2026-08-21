@@ -65,8 +65,6 @@ Best: 0.05ms @ 40 players
 - To configure the Floating Offset backend, set your preferences to the `OffsetUniverse`. It should be automatically created at the root of your project. If not, you can create your own under  `Assets/Create/Floating Offset/OffsetUniverse`
 - To teleport views to specific real positions, use `universe.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
 
-<img width="747" height="771" alt="image" src="https://github.com/user-attachments/assets/e1c23c88-0a73-4a33-9ce6-fd838c6d8fc3" />
-
 ## Singleplayer Setup
 
 Same as above, but instead of adding an `OffsetManagerNetworking` to the NetworkManager object you just need to set up an empty GameObject marked Do Not Destroy on Load and add the plain `OffsetManager` to it. In my opinion using this package for singleplayer is a bit overkill but it does work just fine! Maybe if you have a lot of AI's in you world that need to be constantly rendered even if they are far away from the player? Either way it works well as a plain floating origin package also.
