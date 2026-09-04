@@ -17,7 +17,7 @@ using System;
 public class ServersideTester
 // : NetworkTestFixture <-- Recommended: Inherit your setup/teardown from a base class
 {
-    private OffsetManager manager;
+    private AbstractOffsetManager manager;
     private OffsetUniverse universe;
     private NetworkManager networkManager;
     private const float OFFSET_DISTANCE = 20000;
@@ -56,7 +56,7 @@ public class ServersideTester
             var offsetScene = GameObject.Find("OffsetScene");
             if (offsetScene != null)
             {
-                manager = offsetScene.GetComponent<OffsetManager>();
+                manager = offsetScene.GetComponent<AbstractOffsetManager>();
             }
             yield return new WaitForFixedUpdate();
         }

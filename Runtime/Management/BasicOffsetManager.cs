@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
-    public class BasicOffsetManager : OffsetManager
+    public class BasicOffsetManager : AbstractOffsetManager
     {
         void Awake()
         {
@@ -15,7 +15,10 @@ namespace FloatingOffset.Runtime
             if (handler == null)
                 handler = gameObject.AddComponent<BasicOffsetSceneHandler>();
 
-            universe.InitializeWithHandler(this, handler as IOffsetHandler<Scene>);
+            if (state == null)
+                state = gameObject.AddComponent<OffsetStateManager>();
+
+            universe.InitializeWithHandler(this, state, handler as IOffsetHandler<Scene>);
         }
         void Start()
         {

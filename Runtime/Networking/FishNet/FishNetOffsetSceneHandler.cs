@@ -9,31 +9,29 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class FishNetOffsetSceneHandler : OffsetSceneHandler, IOffsetHandler<Scene>
+    public class FishNetOffsetSceneHandler : AbstractOffsetSceneHandler, IOffsetHandler<Scene>
     {
         private Scene last_scene = default;
-        private Vector3d old_offset = Vector3d.zero;
         public void UpdateOffset(OffsetScene<Scene> scene)
         {
             var key = scene.key;
-            if (!current_offsets.ContainsKey(key))
+            if (state.TryAddOffset(key))
             {
-                AddOffset(key);
+                if (scene.offset == state.GetOffset(scene.key))
+                    return;
             }
-            else if (scene.offset == current_offsets[scene.key])
-                return;
             if (universe.logging)
-                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{current_offsets[key]:#.#}->{scene.offset:#.#} ");
-            Vector3d old_offset = current_offsets[key];
-            current_offsets[key] = scene.offset;
+                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{state.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+            Vector3d old_offset = state.GetOffset(key);
+            state.SetOffset(key, scene.offset);
 
-            if (offsettables.TryGetValue(scene.key, out List<IOffsettable<Scene>> list))
+            if (state.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
             {
-                offsetter.Offset(old_offset, current_offsets[key], scene.key, list.ToArray());
+                offsetter.Offset(old_offset, state.GetOffset(key), scene.key, list.ToArray());
             }
             else
             {
-                offsetter.Offset(old_offset, current_offsets[key], scene.key);
+                offsetter.Offset(old_offset, state.GetOffset(key), scene.key);
             }
 
             var objects = scene.key.GetRootGameObjects();
@@ -61,7 +59,7 @@ namespace FloatingOffset.Runtime.Example
         // Runs on the server
         public void TransferTo(IOffsetObject<Scene> offsetObject, Scene from, Scene to, bool reposition = false)
         {
-            Vector3d absoluteRealPos = current_offsets[from] + offsetObject.GetEnginePosition();
+            Vector3d absoluteRealPos = state.GetOffset(from) + offsetObject.GetEnginePosition();
 
             MonoBehaviour offsetMono = (MonoBehaviour)offsetObject;
 
@@ -71,13 +69,13 @@ namespace FloatingOffset.Runtime.Example
             // Because Real = Unity + Offset, therefore Unity = Real - Offset
             if (reposition)
             {
-                Vector3d newUnityPos = absoluteRealPos - current_offsets[to];
+                Vector3d newUnityPos = absoluteRealPos - state.GetOffset(to);
                 offsetObject.SetEnginePosition(newUnityPos);
             }
 
-            Scene main_scene = mainView.GetSceneKey();
+            Scene main_scene = state.GetMainSceneKey();
 
-            if (offsetObject == mainView)
+            if (state.IsMainView(offsetObject))
             {
                 SetSceneVisibility(from, false);
                 SetSceneVisibility(to, true);
@@ -101,18 +99,19 @@ namespace FloatingOffset.Runtime.Example
                         AutomaticallyUnload = false,
                         LocalPhysics = LocalPhysicsMode.Physics3D,
                     },
-                    MovedNetworkObjects = new NetworkObject[]{nob}
+                    MovedNetworkObjects = new NetworkObject[] { nob }
                 };
                 // load on target client
                 InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, sld);
 
                 if (!nob.IsOwner)
                 {
+                    var offset = state.GetOffset(to);
                     ReceiveOffsetBroadcast to_msg = new ReceiveOffsetBroadcast
                     {
-                        OffsetX = current_offsets[to].x,
-                        OffsetY = current_offsets[to].y,
-                        OffsetZ = current_offsets[to].z
+                        OffsetX = offset.x,
+                        OffsetY = offset.y,
+                        OffsetZ = offset.z
                     };
 
                     if (nob.Owner.IsValid)
@@ -120,17 +119,6 @@ namespace FloatingOffset.Runtime.Example
                 }
             }
         }
-        public new Vector3d GetOffset(Scene scene)
-        {
-            if (universe.ServerActive)
-                if (current_offsets.TryGetValue(scene, out Vector3d offset))
-                {
-                    return offset;
-                }
-                else return Vector3d.zero;
-            return old_offset;
-        }
-
         /// <summary>
         /// Clone the given scene and clears it of OffsetViews. Calls the callback when done.
         /// </summary>

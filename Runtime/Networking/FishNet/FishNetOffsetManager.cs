@@ -10,7 +10,7 @@ using FishNet;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class FishNetOffsetManager : OffsetManager
+    public class FishNetOffsetManager : AbstractOffsetManager
     {
         private Vector3d old_offset = Vector3d.zero;
         private NetworkManager networkManager;
@@ -24,10 +24,13 @@ namespace FloatingOffset.Runtime.Example
             if (handler == null)
                 handler = gameObject.AddComponent<FishNetOffsetSceneHandler>();
 
+            if (state == null)
+                state = gameObject.AddComponent<OffsetStateManager>();
+
             if (TryGetComponent(out networkManager))
             {
                 networkManager.TimeManager.SetPhysicsMode(FishNet.Managing.Timing.PhysicsMode.TimeManager);
-                networkManager.ServerManager.OnServerConnectionState += OnStateChange;
+                networkManager.ServerManager.OnServerConnectionState += OnServerStateChange;
             }
 
             universe.RegisterManager(this); //this way clients can still query their real offsets
@@ -37,12 +40,12 @@ namespace FloatingOffset.Runtime.Example
 
 
         // Called on server
-        private void OnStateChange(ServerConnectionStateArgs args)
+        private void OnServerStateChange(ServerConnectionStateArgs args)
         {
             if (args.ConnectionState == LocalConnectionState.Started)
             {
                 Debug.Log("Initialized universe");
-                universe.InitializeWithHandler(this, handler as IOffsetHandler<Scene>);
+                universe.InitializeWithHandler(this, state, handler as IOffsetHandler<Scene>);
 
                 // Register Server and Client broadcast listeners
                 networkManager.ServerManager.RegisterBroadcast<RequestOffsetBroadcast>(OnServerReceivedRequest);
@@ -73,7 +76,7 @@ namespace FloatingOffset.Runtime.Example
             handler.OnLoadEnd(data.LoadedScenes);
         }
 
-        override protected void OnViewRegistered(OffsetView view)
+        override public void OnViewRegistered(OffsetView view)
         {
             if (networkManager.IsClientOnlyStarted && !networkManager.IsServerStarted)
             {
@@ -104,7 +107,7 @@ namespace FloatingOffset.Runtime.Example
                 return;
             // Executes server-side. 'conn' is automatically the client who sent it.
 
-            Vector3d initial_offset = GetOffset(msg.offset_transform_object.gameObject.scene);
+            Vector3d initial_offset = state.GetOffset(msg.offset_transform_object.gameObject.scene);
 
             // Send the response broadcast back strictly to the connection that asked
             ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast

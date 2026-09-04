@@ -8,25 +8,17 @@ namespace FloatingOffset.Runtime
     /// <summary>
     /// The offset manager bootstraps the OffsetServer. Disable it on network clients.
     /// </summary>
-    public abstract class OffsetManager : OffsetBehaviour
+    public abstract class AbstractOffsetManager : OffsetBehaviour
     {
         [SerializeField]
-        protected OffsetSceneHandler handler;
+        protected AbstractOffsetSceneHandler handler;
+        [SerializeField]
+        protected OffsetStateManager state;
+
         /// <summary>
         /// Set false to disable physics processing on stacked scenes.
         /// </summary>
         public bool updateScenePhysicsInternally = true;
-
-        internal void RegisterView(OffsetView view)
-        {
-            handler.RegisterView(view);
-            OnViewRegistered(view);
-        }
-        internal void UnregisterView(OffsetView view)
-        {
-            if (universe.ServerActive)
-                universe.server.UnregisterView(view);
-        }
         /// <summary>
         /// Runs the Process loop on the OffsetUniverse.
         /// </summary>
@@ -36,38 +28,9 @@ namespace FloatingOffset.Runtime
         /// Called immediately after RegisterView is called.
         /// </summary>
         /// <param name="view"></param>
-        protected virtual void OnViewRegistered(OffsetView view)
+        public virtual void OnViewRegistered(OffsetView view)
         {
             // This space left intentionally blank
-        }
-        /// <summary>
-        /// Register the given Offsettable. Use this if you want something in your game world to be notified when the scene it is in is offset (for example, if you want your terrain to apply a UV-offset based on the real offset of the game scene)
-        /// </summary>
-        /// <param name="offsettable">The Offsettable to register.</param>
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable)
-        {
-            handler.RegisterOffsettable(offsettable, offsettable.GetSceneKey());
-        }
-        /// <summary>
-        /// Unregister the given Offsettable.
-        /// </summary>
-        /// <param name="offsettable">The Offsettable to register.</param>
-        public void UnregisterOffsettable(IOffsettable<Scene> offsettable)
-        {
-            handler.UnregisterOffsettable(offsettable, offsettable.GetSceneKey());
-        }
-        /// <summary>
-        /// Gets the offset of the corresponding scene. Only callable on the host/server.
-        /// </summary>
-        /// <param name="scene">The scene to get the offset for.</param>
-        /// <returns>The offset of the given scene, or zero if the scene does not exist.</returns>
-        public virtual Vector3d GetOffset(Scene scene)
-        {
-            return handler.GetOffset(scene);
-        }
-        public virtual bool HasScene(Scene scene)
-        {
-            return handler.HasScene(scene);
         }
 
         /// <summary>
@@ -84,9 +47,6 @@ namespace FloatingOffset.Runtime
                     Debug.Log($"Teleported {view.name} to {position}");
             }
         }
-
-        public int CountOffsettables() => handler.OffsettableCount();
-
         public int CountRegisteredViews() => universe.server.RegisteredViewCount();
 
         public int CountViews() => universe.server.ActualViewCount();

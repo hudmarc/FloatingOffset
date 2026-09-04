@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class BasicOffsetSceneHandler : OffsetSceneHandler, IOffsetHandler<Scene>
+    public class BasicOffsetSceneHandler : AbstractOffsetSceneHandler, IOffsetHandler<Scene>
     {
         private Scene last_scene = default;
 
@@ -17,24 +17,24 @@ namespace FloatingOffset.Runtime.Example
         public void UpdateOffset(OffsetScene<Scene> scene)
         {
             var key = scene.key;
-            if (!current_offsets.ContainsKey(key))
+            if (state.TryAddOffset(key))
             {
-                AddOffset(key);
+                if (scene.offset == state.GetOffset(scene.key))
+                    return;
             }
-            else if (scene.offset == current_offsets[scene.key])
-                return;
-            if (universe.logging)
-                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{current_offsets[key]:#.#}->{scene.offset:#.#} ");
-            Vector3d old_offset = current_offsets[key];
-            current_offsets[key] = scene.offset;
 
-            if (offsettables.TryGetValue(scene.key, out List<IOffsettable<Scene>> list))
+            if (universe.logging)
+                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{state.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+            Vector3d old_offset = state.GetOffset(key);
+            state.SetOffset(key,scene.offset);
+
+            if (state.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
             {
-                offsetter.Offset(old_offset, current_offsets[key], scene.key, list.ToArray());
+                offsetter.Offset(old_offset, state.GetOffset(key), scene.key, list.ToArray());
             }
             else
             {
-                offsetter.Offset(old_offset, current_offsets[key], scene.key);
+                offsetter.Offset(old_offset, state.GetOffset(key), scene.key);
             }
         }
 
@@ -46,7 +46,7 @@ namespace FloatingOffset.Runtime.Example
         /// <param name="scene"></param>
         public void TransferTo(IOffsetObject<Scene> offsetObject, Scene from, Scene to, bool reposition = false)
         {
-            Vector3d absoluteRealPos = current_offsets[from] + offsetObject.GetEnginePosition();
+            Vector3d absoluteRealPos = state.GetOffset(from) + offsetObject.GetEnginePosition();
 
             SceneManager.MoveGameObjectToScene(gameObject, to);
 
@@ -54,13 +54,13 @@ namespace FloatingOffset.Runtime.Example
             // Because Real = Unity + Offset, therefore Unity = Real - Offset
             if (reposition)
             {
-                Vector3d newUnityPos = absoluteRealPos - current_offsets[to];
+                Vector3d newUnityPos = absoluteRealPos - state.GetOffset(to);
 
                 offsetObject.SetEnginePosition(newUnityPos);
             }
-            Scene main_scene = mainView.GetSceneKey();
+            Scene main_scene = state.GetMainSceneKey();
 
-            if (offsetObject == mainView)
+            if (state.IsMainView(offsetObject))
             {
                 SetSceneVisibility(from, false);
                 SetSceneVisibility(to, true);

@@ -21,7 +21,7 @@ namespace FloatingOffset.Runtime
         private const float TEST_ITERATIONS = 128;
         public const string TEST_SCENE_NAME = "Offline Automated Testing Scene";
 
-        private OffsetManager manager;
+        private AbstractOffsetManager manager;
         private OffsetUniverse universe;
         private NetworkManager networkManager;
 
@@ -53,7 +53,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForFixedUpdate();
             }
 
-            var manager = Component.FindFirstObjectByType<OffsetManager>();
+            var manager = Component.FindFirstObjectByType<AbstractOffsetManager>();
 
             universe = manager.universe;
             Debug.Log("------- Setup complete -------");
@@ -121,7 +121,7 @@ namespace FloatingOffset.Runtime
             GameObject.DestroyImmediate(view.gameObject);
             GameObject.DestroyImmediate(origin.gameObject);
 
-            Assert.AreEqual(0, universe.manager.CountOffsettables());
+            Assert.AreEqual(0, universe.state.CountOffsettables());
             Assert.AreEqual(0, universe.manager.CountRegisteredViews());
 
             yield return null; //one frame
@@ -159,7 +159,7 @@ namespace FloatingOffset.Runtime
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, universe.manager.CountOffsettables());
+            Assert.AreEqual(0, universe.state.CountOffsettables());
             Assert.AreEqual(0, universe.manager.CountRegisteredViews());
 
             yield return null; //one frame

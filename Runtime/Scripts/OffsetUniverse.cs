@@ -15,7 +15,8 @@ namespace FloatingOffset.Runtime
         /// Check if this exists by checking `ServerActive == true`
         /// </summary>
         internal OffsetServer<Scene> server { get; private set; }
-        public OffsetManager manager { get; private set; }
+        public AbstractOffsetManager manager { get; private set; }
+        public OffsetStateManager state { get; private set; }
 
         [field: SerializeField]
         public int MinimumJoinDistance { get; private set; } = 1000;
@@ -37,31 +38,34 @@ namespace FloatingOffset.Runtime
         /// <param name="handler">
         /// The OffsetHandler component.
         /// </param>
-        public void InitializeWithHandler(OffsetManager manager, IOffsetHandler<Scene> handler)
+        public void InitializeWithHandler(AbstractOffsetManager manager, OffsetStateManager state, IOffsetHandler<Scene> handler)
         {
-            if (server == null)
+            if (this.server == null)
                 this.server = new OffsetServer<Scene>(handler, MinimumJoinDistance, MaxScenes, Hysteresis); // Ensure the OffsetServer is ready before the manager is registered
 
-            if (manager == null)
+            if (this.manager == null)
                 this.manager = manager;
+
+            if (this.state == null)
+                this.state = state;
         }
 
-        public void RegisterManager(OffsetManager manager) => this.manager = manager;
+        public void RegisterManager(AbstractOffsetManager manager) => this.manager = manager;
 
         /// <summary>
         /// Alias for <code>manager.RegisterOffsettable(offsettable);</code>
         /// </summary>
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable) => manager.RegisterOffsettable(offsettable);
+        public void RegisterOffsettable(IOffsettable<Scene> offsettable) => state.RegisterOffsettable(offsettable, offsettable.GetSceneKey());
 
         /// <summary>
         /// Alias for <code>manager.GetOffset(scene);</code>
         /// </summary>
-        public Vector3d GetOffset(Scene scene) => manager.GetOffset(scene);
+        public Vector3d GetOffset(Scene scene) => state.GetOffset(scene);
 
         /// <summary>
         /// Alias for <code>manager.HasScene(scene);</code>
         /// </summary>
-        public virtual bool HasScene(Scene scene) => manager.HasScene(scene);
+        public virtual bool HasScene(Scene scene) => state.HasScene(scene);
 
         /// <summary>
         /// Alias for <code>manager.TeleportTo(view, position);</code>
