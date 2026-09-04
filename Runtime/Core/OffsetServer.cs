@@ -30,7 +30,7 @@ namespace FloatingOffset.Runtime
         private readonly int SceneRadiusSquared;
 
         private readonly int MaxScenes;
-        private TSceneKey source;
+        private TSceneKey? source = default;
 
         public IOffsetHandler<TSceneKey> handler { get; private set; }
 
@@ -375,7 +375,7 @@ namespace FloatingOffset.Runtime
 
             // MarkTime(9);
 
-            // rebase all scenes whose actual offset does not match their expected offset
+            // Rebase all scenes whose actual offset does not match their expected offset
             for (int i = 0; i < scenes.Count; i++)
             {
                 // updateOffset does nothing if the offset is already updated.
@@ -520,25 +520,18 @@ namespace FloatingOffset.Runtime
             // Tertiary sort: Winner Index
             return winner_index.CompareTo(other.winner_index);
         }
-
-        // IEquatable<T>: Reflection-Free Equality
         public bool Equals(SceneWinner other)
         {
             return scene_index == other.scene_index &&
                    count == other.count &&
                    winner_index == other.winner_index;
         }
-
-        // Fallback override to prevent boxing if passed as an object
         public override bool Equals(object obj)
         {
             return obj is SceneWinner other && Equals(other);
         }
-
-        // Fast HashCode
         public override int GetHashCode()
         {
-            // Using unchecked integer math is the fastest way to hash in Unity
             unchecked
             {
                 int hash = 17;

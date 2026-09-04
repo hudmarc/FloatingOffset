@@ -77,7 +77,7 @@ namespace FloatingOffset.Editor.Tests
             }
             SceneRootObjects[to].Add(offsettable);
 
-            offsettable.SetSceneKey(to);
+            (offsettable as MockOffsetObject).SetSceneKey(to);
         }
 
         public void UpdateOffset(OffsetScene<int> scene)

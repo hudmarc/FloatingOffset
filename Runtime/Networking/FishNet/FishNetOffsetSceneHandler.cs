@@ -93,7 +93,16 @@ namespace FloatingOffset.Runtime.Example
 
             if (offsetMono.TryGetComponent(out NetworkObject nob))
             {
-                SceneLoadData sld = new SceneLoadData(to);
+                SceneLoadData sld = new SceneLoadData(to)
+                {
+                    Options = new LoadOptions
+                    {
+                        AllowStacking = true,
+                        AutomaticallyUnload = false,
+                        LocalPhysics = LocalPhysicsMode.Physics3D,
+                    },
+                    MovedNetworkObjects = new NetworkObject[]{nob}
+                };
                 // load on target client
                 InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, sld);
 
