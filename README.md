@@ -1,6 +1,5 @@
-## A quick note...
-
-Client-side prediction is currently somewhat broken due to how the package currently handles stacked scenes interfering with FishNet's Client-Side Prediction. This is being fixed in `refactor-unity-interop`. The fixes should be drop-in-place as the API will not change significantly. A migration/best practices guide will be provided if necessary.
+> ### A quick note...
+> Client-side prediction is currently somewhat broken due to how the package currently handles stacked scenes interfering with FishNet's Client-Side Prediction. This is being fixed in `refactor-unity-interop`. The fixes should be drop-in-place as the API will not change significantly. A migration/best practices guide will be provided if necessary.
 
 # Quickstart
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
