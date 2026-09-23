@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using FloatingOffset.Runtime.Types;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
@@ -11,6 +15,12 @@ namespace FloatingOffset.Runtime
         protected AbstractOffsetSceneHandler handler;
         [SerializeField]
         protected OffsetStateManager state;
+
+        private int offsettable_count = 0;
+
+
+        protected Dictionary<Scene, List<IOffsettable<Scene>>> offsettables = new Dictionary<Scene, List<IOffsettable<Scene>>>();
+
 
         /// <summary>
         /// Set false to disable physics processing on stacked scenes.
@@ -27,7 +37,7 @@ namespace FloatingOffset.Runtime
         /// <param name="view"></param>
         public virtual void SetupViewBeforeRegister(OffsetView view)
         {
-            // This space left intentionally blank
+            // this space left intentionally blank
         }
 
         /// <summary>
@@ -47,5 +57,39 @@ namespace FloatingOffset.Runtime
         public int CountRegisteredViews() => universe.server.RegisteredViewCount();
 
         public int CountViews() => universe.server.ActualViewCount();
+        /// <summary>
+        /// The local offset of the given view.
+        /// </summary>
+        /// <param name="view"></param>
+        /// <returns></returns>
+        public abstract Vector3d GetLocalOffset(IOffsetObject<Scene> view);
+        public void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
+        {
+            if (!offsettables.ContainsKey(scene))
+                offsettables.Add(scene, new List<IOffsettable<Scene>> { offsettable });
+            else
+                offsettables[scene].Add(offsettable);
+
+            offsettable_count++;
+        }
+
+        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
+        {
+            if (offsettables.ContainsKey(scene))
+            {
+                offsettables[scene].Remove(offsettable);
+                offsettable_count--;
+            }
+            else
+            {
+                throw new Exception("Offsettable not found in expected scene. Offsettables cannot be moved between scenes.");
+            }
+        }
+        public int OffsettableCount() => offsettable_count;
+
+        public bool TryGetOffsettable(Scene key, out List<IOffsettable<Scene>> list) => offsettables.TryGetValue(key, out list);
+
+        public int CountOffsettables() => offsettable_count;
+
     }
 }

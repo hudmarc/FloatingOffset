@@ -33,7 +33,7 @@ namespace FloatingOffset.Runtime
         {
             foreach (var scene in state.scenes)
             {
-                if (scene.IsValid() && scene != state.firstScene)
+                if (scene.IsValid() && scene.GetPhysicsScene() != Physics.defaultPhysicsScene)
                     scene.GetPhysicsScene().Simulate(delta);
             }
         }

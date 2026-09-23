@@ -38,5 +38,9 @@ namespace FloatingOffset.Runtime
             handler.PhysicsProcess(Time.fixedDeltaTime);
         }
 
+        public override Vector3d GetLocalOffset(IOffsetObject<Scene> view)
+        {
+            return state.GetOffset(view.GetSceneKey());
+        }
     }
 }

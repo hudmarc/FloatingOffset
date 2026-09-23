@@ -1,8 +1,10 @@
 using System.Collections;
 using FloatingOffset.Runtime;
+using FloatingOffset.Runtime.Types;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class OffsetPredictedWheels : MonoBehaviour
+public class OffsetPredictedWheels : OffsetBehaviour, IOffsettable<Scene>
 {
     private OffsetView offset_transform;
     private WheelCollider[] wheels = new WheelCollider[0];
@@ -17,8 +19,7 @@ public class OffsetPredictedWheels : MonoBehaviour
 
     void Awake()
     {
-        offset_transform = GetComponent<OffsetView>();
-        offset_transform.OnOffset += FixWheels;
+
         wheels = GetComponentsInChildren<WheelCollider>();
 
         int wheelCount = wheels.Length;
@@ -35,12 +36,9 @@ public class OffsetPredictedWheels : MonoBehaviour
         }
     }
 
-    void OnDestroy()
+    void Start()
     {
-        if (offset_transform != null)
-        {
-            offset_transform.OnOffset -= FixWheels;
-        }
+        universe.RegisterOffsettable(this);
     }
 
     void FixWheels()
@@ -90,5 +88,15 @@ public class OffsetPredictedWheels : MonoBehaviour
             spring.damper = isGhosted ? 0f : origSuspensionSpring[i].damper;
             wheels[i].suspensionSpring = spring;
         }
+    }
+
+    public Scene GetSceneKey()
+    {
+        return gameObject.scene;
+    }
+
+    public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
+    {
+        FixWheels();
     }
 }

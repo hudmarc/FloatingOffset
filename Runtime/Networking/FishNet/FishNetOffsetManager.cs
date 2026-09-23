@@ -12,7 +12,7 @@ namespace FloatingOffset.Runtime.Example
 {
     public class FishNetOffsetManager : AbstractOffsetManager
     {
-        private Vector3d old_offset = Vector3d.zero;
+        private Vector3d current_offset = Vector3d.zero;
         private NetworkManager networkManager;
         private OffsetView localView;
         // Start is called before the first frame update
@@ -48,7 +48,6 @@ namespace FloatingOffset.Runtime.Example
                 universe.InitializeWithHandler(this, state, handler as IOffsetHandler<Scene>);
 
                 // Register Server and Client broadcast listeners
-                networkManager.ServerManager.RegisterBroadcast<RequestOffsetBroadcast>(OnServerReceivedRequest);
                 networkManager.ClientManager.RegisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
 
                 // Subscribe to the client connection state to replace OnStartClient()
@@ -60,7 +59,6 @@ namespace FloatingOffset.Runtime.Example
             else if (args.ConnectionState == LocalConnectionState.Stopping)
             {
                 // Always unregister to prevent memory leaks!
-                networkManager.ServerManager.UnregisterBroadcast<RequestOffsetBroadcast>(OnServerReceivedRequest);
                 networkManager.ClientManager.UnregisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
 
                 networkManager.TimeManager.OnPreTick -= Process;
@@ -76,29 +74,32 @@ namespace FloatingOffset.Runtime.Example
             {
                 Debug.Log($"Scene loaded (FishNet) {scene.handle.GetHashCode()}");
             }
-            
+
             handler.OnLoadEnd(data.LoadedScenes);
         }
 
         override public void SetupViewBeforeRegister(OffsetView view)
         {
             if (networkManager.IsServerStarted)
-                return;
-
-            if (networkManager.IsClientOnlyStarted)
             {
                 var nob = transform.GetComponent<NetworkObject>();
                 // If the View is the local client (player) then we want to rebase the local scene around them.
-                if (nob != null && nob.IsOwner)
+                if (nob != null && !nob.IsOwner)
                 {
                     if (localView == null)
                         localView = view;
 
-                    RequestOffsetBroadcast offset_broadcast = new RequestOffsetBroadcast
+                    Vector3d initial_offset = state.GetOffset(view.gameObject.scene);
+
+                    // Send the response broadcast back strictly to the connection that asked
+                    ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
                     {
-                        offset_transform_object = nob
+                        OffsetX = initial_offset.x,
+                        OffsetY = initial_offset.y,
+                        OffsetZ = initial_offset.z,
                     };
-                    networkManager.ClientManager.Broadcast(offset_broadcast); //will call OnServerReceivedRequest on the server
+
+                    nob.Owner.Broadcast(responseMsg);
                 }
             }
             else
@@ -107,30 +108,6 @@ namespace FloatingOffset.Runtime.Example
             }
         }
 
-        /// <summary>
-        /// Executes server-side 
-        /// </summary>
-        /// <param name="conn"></param>
-        /// <param name="msg"></param>
-        /// <param name="channel"></param>
-        private void OnServerReceivedRequest(NetworkConnection conn, RequestOffsetBroadcast msg, Channel channel)
-        {
-            if (conn.IsLocalClient)
-                return;
-            // Executes server-side. 'conn' is automatically the client who sent it.
-
-            Vector3d initial_offset = state.GetOffset(msg.offset_transform_object.gameObject.scene);
-
-            // Send the response broadcast back strictly to the connection that asked
-            ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
-            {
-                OffsetX = initial_offset.x,
-                OffsetY = initial_offset.y,
-                OffsetZ = initial_offset.z,
-            };
-
-            conn.Broadcast(responseMsg);
-        }
 
         /// <summary>
         /// This runs only on the client that originally made the request.
@@ -145,10 +122,11 @@ namespace FloatingOffset.Runtime.Example
 
             var new_offset = new Vector3d(msg.OffsetX, msg.OffsetY, msg.OffsetZ);
             if (universe.logging)
-                Debug.Log($"OFFSET CLIENT: [Local Scene]\n{old_offset}->{new_offset} ]");
-            handler.offsetter.Offset(old_offset, new_offset, localView.gameObject.scene);
-            old_offset = new_offset;
+                Debug.Log($"OFFSET CLIENT: [Local Scene]\n{current_offset}->{new_offset} ]");
+            handler.offsetter.Offset(current_offset, new_offset, localView.gameObject.scene);
+            current_offset = new_offset;
         }
+        public override Vector3d GetLocalOffset(IOffsetObject<Scene> view) => universe.state == null ? current_offset : universe.state.GetOffset(view.GetSceneKey());
     }
     public struct RequestOffsetBroadcast : IBroadcast { public NetworkObject offset_transform_object; }
 

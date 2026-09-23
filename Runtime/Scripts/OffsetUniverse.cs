@@ -55,12 +55,7 @@ namespace FloatingOffset.Runtime
         /// <summary>
         /// Alias for <code>manager.RegisterOffsettable(offsettable);</code>
         /// </summary>
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable) => state.RegisterOffsettable(offsettable, offsettable.GetSceneKey());
-
-        /// <summary>
-        /// Alias for <code>manager.GetOffset(scene);</code>
-        /// </summary>
-        public Vector3d GetOffset(Scene scene) => state.GetOffset(scene);
+        public void RegisterOffsettable(IOffsettable<Scene> offsettable) => manager.RegisterOffsettable(offsettable, offsettable.GetSceneKey());
 
         /// <summary>
         /// Alias for <code>manager.HasScene(scene);</code>

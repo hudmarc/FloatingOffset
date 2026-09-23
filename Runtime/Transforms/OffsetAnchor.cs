@@ -21,7 +21,7 @@ namespace FloatingOffset.Runtime
 
             initialized = true;
             scene = gameObject.scene;
-            universe.state.RegisterOffsettable(this, this.GetSceneKey());
+            universe.manager.RegisterOffsettable(this, this.GetSceneKey());
         }
         void Start()
         {
@@ -30,7 +30,7 @@ namespace FloatingOffset.Runtime
                 return;
             }
             scene = gameObject.scene;
-            universe.state.RegisterOffsettable(this, this.GetSceneKey());
+            universe.manager.RegisterOffsettable(this, this.GetSceneKey());
 
 
             Vector3d current_scene_offset = universe.state.GetOffset(scene);
@@ -40,7 +40,7 @@ namespace FloatingOffset.Runtime
         void OnDestroy()
         {
             Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
-            universe.state.UnregisterOffsettable(this, this.GetSceneKey());
+            universe.manager.UnregisterOffsettable(this, this.GetSceneKey());
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {

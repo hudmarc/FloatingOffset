@@ -14,11 +14,7 @@ namespace FloatingOffset.Runtime
     {
         private AbstractOffsetManager manager;
         protected Dictionary<Scene, Vector3d> current_offsets = new Dictionary<Scene, Vector3d>();
-        protected Dictionary<Scene, List<IOffsettable<Scene>>> offsettables = new Dictionary<Scene, List<IOffsettable<Scene>>>();
-        private int offsettable_count = 0;
         protected IOffsetObject<Scene> mainView = null;
-        private Scene first_scene;
-        internal Scene firstScene => first_scene;
         internal IEnumerable<Scene> scenes => current_offsets.Keys.AsEnumerable();
 
         private void Start()
@@ -48,32 +44,8 @@ namespace FloatingOffset.Runtime
             if (universe.ServerActive)
                 universe.server.UnregisterView(view);
         }
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
-        {
-            if (!offsettables.ContainsKey(scene))
-                offsettables.Add(scene, new List<IOffsettable<Scene>> { offsettable });
-            else
-                offsettables[scene].Add(offsettable);
-
-            offsettable_count++;
-        }
-
-        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
-        {
-            if (offsettables.ContainsKey(scene))
-            {
-                offsettables[scene].Remove(offsettable);
-                offsettable_count--;
-            }
-            else
-            {
-                throw new Exception("Offsettable not found in expected scene. Offsettables cannot be moved between scenes.");
-            }
-        }
-        public int OffsettableCount() => offsettable_count;
         public void AddOffset(Scene scene)
         {
-            first_scene = scene;
             current_offsets.Add(scene, Vector3d.zero);
         }
         public virtual Vector3d GetOffset(Scene scene) => current_offsets.ContainsKey(scene) ? current_offsets[scene] : Vector3d.zero;
@@ -92,13 +64,8 @@ namespace FloatingOffset.Runtime
                 return true;
             }
         }
-
-        public bool TryGetOffsettable(Scene key, out List<IOffsettable<Scene>> list) => offsettables.TryGetValue(key, out list);
-
         public Scene GetMainSceneKey() => mainView.GetSceneKey();
 
         public bool IsMainView(IOffsetObject<Scene> offsetObject) => offsetObject == mainView;
-
-        public int CountOffsettables() => offsettable_count;
     }
 }

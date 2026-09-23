@@ -27,7 +27,7 @@ namespace FloatingOffset.Runtime.Example
             Vector3d old_offset = state.GetOffset(key);
             state.SetOffset(key,scene.offset);
 
-            if (state.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
+            if (universe.manager.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
             {
                 offsetter.Offset(old_offset, state.GetOffset(key), scene.key, list.ToArray());
             }

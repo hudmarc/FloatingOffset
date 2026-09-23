@@ -1,43 +1,46 @@
+using FloatingOffset.Runtime.Types;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class OffsetPredictedRigidbody : MonoBehaviour
+    public class OffsetPredictedRigidbody : OffsetBehaviour, IOffsettable<Scene>
     {
-        private OffsetView offset_transform;
+        private OffsetView view;
         private Rigidbody[] rigidbodies = new Rigidbody[0];
         private Vector3[] velocities = new Vector3[0];
+        [SerializeField] float acceleration_delta = 40;
         void Awake()
         {
-            offset_transform = GetComponent<OffsetView>();
-            offset_transform.OnPreOffset += GatherVelocities;
-            offset_transform.OnOffset += ApplyVelocities;
+            view = GetComponent<OffsetView>();
+
             rigidbodies = GetComponentsInChildren<Rigidbody>();
             velocities = new Vector3[rigidbodies.Length];
-
-            int rb_count = rigidbodies.Length;
         }
-        void OnDestroy()
+        void Start()
         {
-            if (offset_transform != null)
-            {
-                offset_transform.OnPreOffset -= GatherVelocities;
-                offset_transform.OnOffset -= ApplyVelocities;
-            }
+            universe.RegisterOffsettable(this);
         }
-        void GatherVelocities()
+        void Update()
         {
             for (int i = 0; i < rigidbodies.Length; i++)
             {
-                velocities[i] = rigidbodies[i].velocity;
+                if ((rigidbodies[i].velocity).sqrMagnitude > 0.01f)
+                    velocities[i] = rigidbodies[i].velocity;
             }
         }
-        void ApplyVelocities()
+        public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
             for (int i = 0; i < rigidbodies.Length; i++)
             {
                 rigidbodies[i].velocity = velocities[i];
+                Debug.Log($"Restored velocity {rigidbodies[i].velocity} to {rigidbodies[i].gameObject.name}");
             }
+        }
+
+        public Scene GetSceneKey()
+        {
+            return gameObject.scene;
         }
     }
 }

@@ -28,7 +28,7 @@ namespace FloatingOffset.Runtime.Example
             Vector3d old_offset = state.GetOffset(key);
             state.SetOffset(key, scene.offset);
 
-            if (state.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
+            if (universe.manager.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
             {
                 offsetter.Offset(old_offset, state.GetOffset(key), scene.key, list.ToArray());
             }
@@ -94,18 +94,10 @@ namespace FloatingOffset.Runtime.Example
 
             if (offsetMono.TryGetComponent(out NetworkObject nob))
             {
-                SceneLoadData sld = new SceneLoadData(to)
-                {
-                    Options = new LoadOptions
-                    {
-                        AllowStacking = true,
-                        AutomaticallyUnload = false,
-                        LocalPhysics = LocalPhysicsMode.Physics3D,
-                    },
-                    MovedNetworkObjects = new NetworkObject[] { nob }
-                };
-                // load on target client
-                InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, sld);
+                // Use Unity's SceneManager to move the specific object to a specifc scene.
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
+                // Then you can tell FishNet to rebuild the observers.
+                InstanceFinder.ServerManager.Objects.RebuildObservers();
 
                 if (!nob.IsOwner)
                 {

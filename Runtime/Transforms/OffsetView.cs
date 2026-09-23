@@ -13,10 +13,11 @@ namespace FloatingOffset.Runtime
     {
         private bool registered = false;
         private bool isValid = false;
-        public Action OnPreOffset;
-        public Action OnOffset;
         void Start()
         {
+            if (universe.state == null)
+                return;
+
             if (enabled && !registered && transform.parent == null)
             {
                 universe.state.RegisterView(this);
@@ -42,8 +43,7 @@ namespace FloatingOffset.Runtime
         /// The real position of this OffsetView in its Offset Universe.
         /// </summary>
         /// <returns>The real position.</returns>
-        public Vector3d GetRealPosition() => UnityFunctions.UnityToReal(transform.position, GetOffset());
-        private Vector3d GetOffset() => universe.state.GetOffset(gameObject.scene);
+        public Vector3d GetRealPosition() => UnityFunctions.UnityToReal(transform.position, universe.manager.GetLocalOffset(this));
         public bool IsValid() => isValid;
 
         Vector3d IOffsetObject<Scene>.GetEnginePosition() => UnityFunctions.toVector3d(transform.position);
