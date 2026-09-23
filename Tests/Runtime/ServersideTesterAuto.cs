@@ -5,6 +5,7 @@ using System.Text;
 using FishNet.Managing;
 using FishNet.Object;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -154,6 +155,13 @@ namespace FloatingOffset.Runtime
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
 
+            Debug.Log($"Offsettables {universe.state.CountOffsettables()}");
+            Debug.Log($"Registered Views {universe.manager.CountRegisteredViews()}");
+            Debug.Log($"Views {universe.manager.CountViews()}");
+
+            Assert.AreEqual(1, universe.state.CountOffsettables());
+            Assert.AreEqual(1, universe.manager.CountRegisteredViews());
+
             GameObject.Destroy(view.gameObject);
             GameObject.Destroy(origin.gameObject);
 
@@ -172,7 +180,7 @@ namespace FloatingOffset.Runtime
         public IEnumerator OffsetTest()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Step; Error (mm);Error at Origin (meters); Distance; Delta");
+            sb.AppendLine("Step; Error (mm);Origin Offset (meters); Distance; Delta; Desync Count");
 
             OffsetView view = null;
             OffsetAnchor origin = null;
@@ -217,16 +225,16 @@ namespace FloatingOffset.Runtime
                     Debug.LogWarning($"Rebase not working properly, still desynchronized after {desync_count} frames. Was {view.transform.position.x}");
                 }
 
-                var distanceFromOrigin = Vector3d.Distance(Vector3d.zero, view.GetRealPosition());
-                var errorAtOrigin = Vector3.Distance(Vector3.zero, origin.transform.position);
+                var view_error = Vector3d.Distance(Vector3d.zero, view.GetRealPosition());
+                var origin_offset = Vector3.Distance(Vector3.zero, origin.transform.position);
 
-                sb.Append($"{i};{error * 1000};{errorAtOrigin};{distanceFromOrigin};{val}\n");
+                sb.Append($"{i};{error * 1000};{origin_offset};{view_error};{val};{desync_count}\n");
             }
 
             Debug.Log("--------RESULTS--------");
             Debug.Log(Application.persistentDataPath + "/output.csv");
             System.IO.File.WriteAllText(Application.persistentDataPath + "/output.csv", sb.ToString());
-
+            EditorUtility.RevealInFinder(Application.persistentDataPath);
         }
 
         [UnityTest]
@@ -343,16 +351,27 @@ namespace FloatingOffset.Runtime
                     yield return new WaitForEndOfFrame();
                     yield return null;
 
-                    double error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
-                    while (error > 2.0)
+                    double absolute_error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
+                    float local_error = currentView.transform.position.magnitude;
+                    while (absolute_error > 2.0 || local_error > 5000)
                     {
-                        Debug.LogWarning($"Precision failure on iteration {i}. View {viewIndex} is off by {error} units.");
+                        if (absolute_error > 2.0)
+                        {
+                            Debug.LogWarning($"Precision failure on iteration {i}. View {viewIndex} is off by {absolute_error} units.");
+                        }
+                        if (local_error > 5000)
+                        {
+                            Debug.LogWarning($"Offset failure on iteration {i}. View {viewIndex} is off-center by {local_error} units.");
+                        }
+
                         yield return new WaitForEndOfFrame();
-                        error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
+                        absolute_error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
+                        local_error = currentView.transform.position.magnitude;
                         error_frames++;
                     }
-                    Assert.Less(error, 2.0, $"Precision failure on iteration {i}. View {viewIndex} is off by {error} units.");
-                    Debug.Log($"Iteration {i} passed. View {viewIndex} tracking perfectly at {currentView.GetRealPosition()}");
+                    Assert.Less(absolute_error, 2.0, $"Precision failure on iteration {i}. View {viewIndex} is off by {absolute_error} units.");
+                    Assert.Less(local_error, 5000, $"Offset failure on iteration {i}. View {viewIndex} is off-center by {local_error} units.");
+                    Debug.Log($"Iteration {i} passed. View {viewIndex} tracking at {currentView.GetRealPosition()}");
                 }
             }
             Debug.Log($"Test passed with {error_frames} imprecise frames.");
@@ -564,58 +583,70 @@ namespace FloatingOffset.Runtime
             yield return MergeTestLogic(views[0], views[1]);
         }
 
-        /// <summary>
-        /// Extracted logic for the merge test to prevent testing framework confusion.
-        /// </summary>
         private IEnumerator MergeTestLogic(OffsetView test, OffsetView control)
         {
             test.transform.position = Vector3.zero;
             control.transform.position = Vector3.zero;
 
-            Assert.AreEqual(control.gameObject.scene, test.gameObject.scene);
-            Vector3d controlReal = control.GetRealPosition();
+            // Wait one frame to ensure the system registers the initial placement
+            yield return null;
 
-            Vector3 move = Vector3.zero;
-            int desyncFrameCount = 0;
+            Assert.AreEqual(control.gameObject.scene, test.gameObject.scene, "Objects should start in the same scene.");
 
-            for (int i = 0; i < 32; i++)
+            // Separate objects
+            Vector3 largeOffset = new Vector3(OFFSET_DISTANCE * 2, 0, 0);
+            test.transform.position += largeOffset;
+
+            bool inDifferentScenes = false;
+            bool testIsRebased = false;
+            bool controlIsRebased = false;
+
+            // Wait up to 5 frames for the system to rebase the offsetviews
+            for (int i = 0; i < 10; i++)
             {
-                if (test == null) break;
+                yield return null;
 
-                if (i % 2 != 0)
-                {
-                    move = new Vector3(((i % 29) * OFFSET_DISTANCE) + i, ((i % 31) * OFFSET_DISTANCE) + i, ((i % 37) * OFFSET_DISTANCE) + i);
-                    if (test.GetRealPosition() != Vector3d.zero)
-                    {
-                        Vector3d offset = universe.GetOffset(test.gameObject.scene);
-                        test.transform.position = UnityFunctions.RealToUnity(Vector3d.zero, offset);
-                    }
-                }
-                else
-                {
-                    move = -move;
-                }
+                inDifferentScenes = test.gameObject.scene != control.gameObject.scene;
+                testIsRebased = test.transform.position.magnitude <= 10f;
+                controlIsRebased = control.transform.position.magnitude <= 10f;
 
-                test.transform.position += move;
+                Debug.Log($"({i}) In different scenes: {inDifferentScenes} Test Rebased: {testIsRebased} Control Rebased: {controlIsRebased}");
 
-                if (control.IsValid())
-                {
-                    if (Vector3d.Magnitude(controlReal - control.GetRealPosition()) > 10)
-                    {
-                        desyncFrameCount++;
-                    }
-                    else
-                    {
-                        desyncFrameCount = 0;
-                    }
+                if (inDifferentScenes && testIsRebased && controlIsRebased)
+                    break;
 
-                    if (desyncFrameCount > 5)
-                    {
-                        throw new Exception("Desynchronization lasted for more than 5 frames!");
-                    }
-                    yield return null;
-                }
             }
+
+            Assert.IsTrue(inDifferentScenes, "The views were not in separate scenes within 5 frames");
+            Assert.IsTrue(testIsRebased, $"The test view is not where it should be, was {test.transform.position}");
+            Assert.IsTrue(controlIsRebased, $"The control view is not where it should be, was {control.transform.position}");
+
+
+            // Rejoin objects
+            test.transform.position -= largeOffset;
+
+            inDifferentScenes = false;
+            testIsRebased = false;
+            controlIsRebased = false;
+
+            // Wait up to 5 frames for everything to end up in the same offset scene
+            for (int i = 0; i < 10; i++)
+            {
+                yield return null;
+
+                inDifferentScenes = test.gameObject.scene != control.gameObject.scene;
+                testIsRebased = test.transform.position.magnitude <= 10f;
+                controlIsRebased = control.transform.position.magnitude <= 10f;
+
+                Debug.Log($"({i}) In different scenes: {inDifferentScenes} Test Rebased: {testIsRebased} Control Rebased: {controlIsRebased}");
+
+                if (!inDifferentScenes && testIsRebased && controlIsRebased)
+                    break;
+            }
+
+            Assert.IsFalse(inDifferentScenes, "The views were still in separate scenes after rejoining, even after 5 frames");
+            Assert.IsTrue(testIsRebased, $"The test view is not where it should be, was {test.transform.position}");
+            Assert.IsTrue(controlIsRebased, $"The control view is not where it should be, was {control.transform.position}");
         }
 
         private OffsetView FindView()

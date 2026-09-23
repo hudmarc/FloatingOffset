@@ -19,6 +19,7 @@ namespace FloatingOffset.Runtime
         protected IOffsetObject<Scene> mainView = null;
         private Scene first_scene;
         internal Scene firstScene => first_scene;
+        internal IEnumerable<Scene> scenes => current_offsets.Keys.AsEnumerable();
 
         private void Start()
         {
@@ -28,7 +29,20 @@ namespace FloatingOffset.Runtime
             }
         }
 
-        internal IEnumerable<Scene> scenes => current_offsets.Keys.AsEnumerable();
+        internal void RegisterView(OffsetView view)
+        {
+            if (universe.logging)
+                Debug.Log($"Registered View {view.name}");
+
+            manager.SetupViewBeforeRegister(view);
+
+            if (universe.ServerActive)
+            {
+                universe.server.RegisterView(view);
+                if (mainView == null)
+                    mainView = view;
+            }
+        }
         internal void UnregisterView(OffsetView view)
         {
             if (universe.ServerActive)
@@ -68,20 +82,6 @@ namespace FloatingOffset.Runtime
             current_offsets[key] = offset;
         }
         public virtual bool HasScene(Scene scene) => current_offsets.ContainsKey(scene);
-        internal void RegisterView(OffsetView view)
-        {
-            if (universe.logging)
-                Debug.Log($"Registered View {view.name}");
-            if (universe.ServerActive)
-            {
-                universe.server.RegisterView(view);
-                if (mainView == null)
-                    mainView = view;
-            }
-
-            manager.OnViewRegistered(view);
-        }
-
         public bool TryAddOffset(Scene key)
         {
             if (current_offsets.ContainsKey(key))

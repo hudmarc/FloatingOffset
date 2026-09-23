@@ -30,7 +30,7 @@ namespace FloatingOffset.Runtime
         private readonly int SceneRadiusSquared;
 
         private readonly int MaxScenes;
-        private TSceneKey? source = default;
+        private TSceneKey source = default;
 
         public IOffsetHandler<TSceneKey> handler { get; private set; }
 
@@ -101,7 +101,6 @@ namespace FloatingOffset.Runtime
         private int[] view_scene_indexes = new int[8];
         private int[] union_counts = new int[8];
         private Vector3d[] union_sums = new Vector3d[8];
-        private ScenedUnion[] union_scene_tuples = new ScenedUnion[8];
         private FastUnionFind union = new FastUnionFind(8);
         private Stopwatch stopwatch = new Stopwatch();
         private (TimeSpan, int)[] process_loop_times = new (TimeSpan, int)[14];
@@ -141,6 +140,8 @@ namespace FloatingOffset.Runtime
         // Tracks the current winning scene for a given root
         // Key: root | Value: (Winning Scene, Max Count, Representative View Index)
         Dictionary<int, SceneWinner> winners = new Dictionary<int, SceneWinner>();
+        Dictionary<int, (int rep, int count, int winnerIndex)> scene_best_winner = new Dictionary<int, (int rep, int count, int winnerIndex)>();
+
         private void EnsureCapacity(int count)
         {
             if (view_positions.Length < count)
@@ -150,7 +151,6 @@ namespace FloatingOffset.Runtime
                 Array.Resize(ref view_scene_indexes, newSize);
                 Array.Resize(ref union_counts, newSize);
                 Array.Resize(ref union_sums, newSize);
-                Array.Resize(ref union_scene_tuples, newSize);
             }
         }
         public void Process()
@@ -164,6 +164,7 @@ namespace FloatingOffset.Runtime
                 {
                     int lastIndex = views.Count - 1;
                     views[i] = views[lastIndex];
+                    views_to_remove.Remove(views[i]);
                     views.RemoveAt(lastIndex);
                     i--;
                     continue;
@@ -269,71 +270,33 @@ namespace FloatingOffset.Runtime
 
             // MarkTime(6);
 
+            // MarkTime(7);
             winners.Clear();
+            scene_best_winner.Clear();
 
-            Array.Clear(union_scene_tuples, 0, union_scene_tuples.Length);
-            // populate union_scene_tuples from the union
+
+            // The first scene of the largest union in a given union should be the "winner" and all other sub-scenes will be moved to it.
+            // This assumes that large unions will stay
             for (int i = 0; i < view_count; i++)
             {
-                union_scene_tuples[i] = new ScenedUnion { scene_index = view_scene_indexes[i], representative = union.Find(i) };
-            }
+                int rep = union.Find(i);
+                int sceneIdx = view_scene_indexes[i];
 
-            // MarkTime(7);
-            int current_scene = union_scene_tuples[0].scene_index;
-            int current_union = union_scene_tuples[0].representative;
-            int current_run_count = 1;
-
-            int scene_champion_union = current_union;
-            int scene_champion_count = 1;
-
-            // Scan and Reduce
-            for (int i = 1; i < union_scene_tuples.Length; i++)
-            {
-                ScenedUnion item = union_scene_tuples[i];
-
-                if (item.scene_index == current_scene && item.representative == current_union)
+                // If we haven't picked a winner for this scene yet, OR if this view's union 
+                // is globally larger than the current scene winner, update the champion.
+                if (!winners.TryGetValue(sceneIdx, out var currentBest) ||
+                    union_counts[rep] > currentBest.count)
                 {
-                    // Still looking at the same union in the same scene
-                    current_run_count++;
-                }
-                else
-                {
-                    // The union changed OR the scene changed. 
-                    // First, see if the run that just finished beats the current scene champion.
-                    if (current_run_count > scene_champion_count)
-                    {
-                        scene_champion_union = current_union;
-                        scene_champion_count = current_run_count;
-                    }
-
-                    // If the SCENE changed, the battle for the previous scene is officially over.
-                    if (item.scene_index != current_scene)
-                    {
-                        // Lock in the winner for the old scene
-                        winners[scene_champion_union] = new SceneWinner(current_scene, scene_champion_count, scene_champion_union);
-
-                        // Reset champion tracking for the brand new scene
-                        current_scene = item.scene_index;
-                        scene_champion_union = item.representative;
-                        scene_champion_count = 0;
-                    }
-
-                    // Reset the run tracking for the new union
-                    current_union = item.representative;
-                    current_run_count = 1;
+                    scene_best_winner[sceneIdx] = (rep, union_counts[rep], i);
                 }
             }
 
-            // MarkTime(8);
-            // Resolve the Tail
-            // Evaluate the final run that was active when the loop ended
-            if (current_run_count > scene_champion_count)
+            // Write champions to winners
+            foreach (var kvp in scene_best_winner)
             {
-                scene_champion_union = current_union;
-                scene_champion_count = current_run_count;
+                var best = kvp.Value;
+                winners[best.rep] = new SceneWinner(kvp.Key, best.count, best.winnerIndex);
             }
-            // Lock in the final scene
-            winners[scene_champion_union] = new SceneWinner(current_scene, scene_champion_count, scene_champion_union);
 
             // Transfer all views that are not in the right scene && compute merges
             for (int i = 0; i < view_count; i++)
@@ -364,7 +327,7 @@ namespace FloatingOffset.Runtime
                     // if not, we do nothing because this view will be moved to the first available scene as soon as the scene loads.
                     // the flip-side: if you a player was just interacting with a bunch of other players and then they warp-speed out
                     // they might have a frame hitch as they warp out. keep this in mind as the gamedev, or use the Teleport(view,real_position);
-                    // function on the OffsetManager.
+                    // function on the OffsetManager, which warms up the scene first before teleporting the player.
                     if (RequestScene(source, union_sums[rep] / (double)union_counts[rep], out int found)) //this runs once per frame now instead of only ever when a view is in a scene that has not been rebased
                     {
                         // transfer the view to the scene

@@ -8,7 +8,6 @@ namespace FloatingOffset.Runtime.Example
 {
     public class BasicOffsetSceneHandler : AbstractOffsetSceneHandler, IOffsetHandler<Scene>
     {
-        private Scene last_scene = default;
 
         /// <summary>
         /// Updates the offset for the given scene.
@@ -84,7 +83,6 @@ namespace FloatingOffset.Runtime.Example
         /// <param name="onSceneReady"></param>
         public void Clone(Scene scene, Action<Scene> onSceneReady)
         {
-            float start_time = Time.time;
             if (last_scene == scene)
             {
                 if (universe.logging)

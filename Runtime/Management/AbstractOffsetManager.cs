@@ -1,7 +1,4 @@
-using UnityEngine.SceneManagement;
 using UnityEngine;
-using FloatingOffset.Runtime.Types;
-using System;
 
 namespace FloatingOffset.Runtime
 {
@@ -25,10 +22,10 @@ namespace FloatingOffset.Runtime
         protected void Process() => universe.server.Process();
 
         /// <summary>
-        /// Called immediately after RegisterView is called.
+        /// Called immediately before RegisterView is called.
         /// </summary>
         /// <param name="view"></param>
-        public virtual void OnViewRegistered(OffsetView view)
+        public virtual void SetupViewBeforeRegister(OffsetView view)
         {
             // This space left intentionally blank
         }

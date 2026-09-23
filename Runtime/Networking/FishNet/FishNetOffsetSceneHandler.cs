@@ -11,7 +11,6 @@ namespace FloatingOffset.Runtime.Example
 {
     public class FishNetOffsetSceneHandler : AbstractOffsetSceneHandler, IOffsetHandler<Scene>
     {
-        private Scene last_scene = default;
         public void UpdateOffset(OffsetScene<Scene> scene)
         {
             var key = scene.key;
@@ -20,6 +19,10 @@ namespace FloatingOffset.Runtime.Example
                 if (scene.offset == state.GetOffset(scene.key))
                     return;
             }
+
+            if (Vector3d.SquaredMagnitude(state.GetOffset(key) - scene.offset) < 1.0d)
+                return;
+
             if (universe.logging)
                 Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{state.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
             Vector3d old_offset = state.GetOffset(key);
@@ -126,6 +129,8 @@ namespace FloatingOffset.Runtime.Example
         /// <param name="onSceneReady"></param>
         public void Clone(Scene scene, Action<Scene> onSceneReady)
         {
+            Debug.Log($"Attempting to clone {scene.name}");
+
             float start_time = Time.time;
             if (!universe.ServerActive)
             {
@@ -139,21 +144,29 @@ namespace FloatingOffset.Runtime.Example
                     Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.handle.ToHex()}");
                 return;
             }
-
-            SceneLoadData sld = new SceneLoadData(scene.name)
-            {
-                Options = new LoadOptions
-                {
-                    AllowStacking = true,
-                    AutomaticallyUnload = false,
-                    LocalPhysics = LocalPhysicsMode.Physics3D
-                }
-            };
-
-            InstanceFinder.SceneManager.LoadConnectionScenes(sld);
-            QueueSceneLoadCallback(onSceneReady);
-
             last_scene = scene;
+
+            // this is called twice if the editor is unfocused. seems to be a Unity bug.
+            // we load the scene with the Unity scene manager on the server first (since we are creating a clone of an existing scene)
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene.buildIndex, parameters).completed += (arg) =>
+            {
+                Scene loaded_scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(UnityEngine.SceneManagement.SceneManager.sceneCount - 1);
+                OnLoadEnd(new Scene[] { loaded_scene });
+
+                //then we register the scene with FishNet
+                SceneLoadData sld = new SceneLoadData(scene)
+                {
+                    Options = new LoadOptions
+                    {
+                        AllowStacking = true,
+                        AutomaticallyUnload = false,
+                        LocalPhysics = LocalPhysicsMode.Physics3D,
+                    }
+                };
+
+                InstanceFinder.SceneManager.LoadConnectionScenes(sld);
+            };
+            QueueSceneLoadCallback(onSceneReady);
         }
 
         public void Unload(Scene scene)
@@ -167,7 +180,7 @@ namespace FloatingOffset.Runtime.Example
             }
 
             SceneUnloadData sud = new SceneUnloadData(scene);
-            InstanceFinder.SceneManager.UnloadConnectionScenes(sud);
+            InstanceFinder.SceneManager.UnloadGlobalScenes(sud);
         }
     }
 }

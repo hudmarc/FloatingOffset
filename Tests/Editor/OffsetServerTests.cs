@@ -157,8 +157,11 @@ namespace FloatingOffset.Editor.Tests
 
                 for (int i = 0; i < VIEWS; i++)
                 {
-                    double error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
-                    Assert.Less(error, 2.0, $"View {i} deviated from intended position. Error: {error}");
+                    double absolute_error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
+                    double local_error = Vector3d.Magnitude(views[i].GetEnginePosition()); // Local distance from origin
+
+                    Assert.Less(absolute_error, 2.0, $"View {i} deviated in real space. Error: {absolute_error}");
+                    Assert.Less(local_error, 5000.0, $"View {i} is off-center in engine space. Local magnitude: {local_error}");
                 }
             }
         }

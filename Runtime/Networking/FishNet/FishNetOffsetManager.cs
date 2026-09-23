@@ -72,15 +72,23 @@ namespace FloatingOffset.Runtime.Example
 
         private void OnLoadEnd(FishNet.Managing.Scened.SceneLoadEndEventArgs data)
         {
-            Debug.Log($"Scene loaded (FishNet)\n{data.ToString()}");
+            foreach (var scene in data.LoadedScenes)
+            {
+                Debug.Log($"Scene loaded (FishNet) {scene.handle.GetHashCode()}");
+            }
+            
             handler.OnLoadEnd(data.LoadedScenes);
         }
 
-        override public void OnViewRegistered(OffsetView view)
+        override public void SetupViewBeforeRegister(OffsetView view)
         {
-            if (networkManager.IsClientOnlyStarted && !networkManager.IsServerStarted)
+            if (networkManager.IsServerStarted)
+                return;
+
+            if (networkManager.IsClientOnlyStarted)
             {
                 var nob = transform.GetComponent<NetworkObject>();
+                // If the View is the local client (player) then we want to rebase the local scene around them.
                 if (nob != null && nob.IsOwner)
                 {
                     if (localView == null)
@@ -92,6 +100,10 @@ namespace FloatingOffset.Runtime.Example
                     };
                     networkManager.ClientManager.Broadcast(offset_broadcast); //will call OnServerReceivedRequest on the server
                 }
+            }
+            else
+            {
+                throw new System.Exception($"Attempted to register view on {view.gameObject.name} before NetworkServer was ready.");
             }
         }
 

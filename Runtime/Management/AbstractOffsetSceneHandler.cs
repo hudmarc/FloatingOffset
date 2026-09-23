@@ -7,9 +7,12 @@ namespace FloatingOffset.Runtime
 {
     public class AbstractOffsetSceneHandler : OffsetBehaviour
     {
+        protected Scene last_scene = default;
         public Offsetter offsetter;
         protected OffsetStateManager state;
         protected readonly LoadSceneParameters parameters = new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D);
+        Queue<Action<Scene>> readyActions = new Queue<Action<Scene>>();
+
         // Initialize references to the Offsetter and the OffsetStateManager
         private void Start()
         {
@@ -55,8 +58,6 @@ namespace FloatingOffset.Runtime
                 }
             }
         }
-        Queue<Action<Scene>> readyActions = new Queue<Action<Scene>>();
-
         public void OnLoadEnd(Scene[] loadedScenes)
         {
             foreach (Scene scene in loadedScenes)
@@ -65,6 +66,7 @@ namespace FloatingOffset.Runtime
                 if (readyActions.Count > 0)
                     readyActions.Dequeue()(scene);
             }
+            last_scene = default;
         }
         public void QueueSceneLoadCallback(Action<Scene> onSceneReady) => readyActions.Enqueue(onSceneReady);
     }
