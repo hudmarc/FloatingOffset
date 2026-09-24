@@ -6,36 +6,77 @@ namespace FloatingOffset.Runtime.Example
 {
     public class OffsetPredictedRigidbody : OffsetBehaviour, IOffsettable<Scene>
     {
+        private const int HISTORY_SIZE = 120;
+
         private OffsetView view;
         private Rigidbody[] rigidbodies = new Rigidbody[0];
-        private Vector3[] velocities = new Vector3[0];
-        [SerializeField] float acceleration_delta = 40;
+        
+        // Ring buffer storing velocity history: [rigidbodyIndex, historyIndex]
+        private Vector3[,] velocityHistory;
+        private Vector3[] restoredVelocities = new Vector3[0];
+        private int bufferIndex = 0;
+
+        [SerializeField] int restoreFrames = 120;
+        private int restore_frames = 0;
+
         void Awake()
         {
             view = GetComponent<OffsetView>();
 
             rigidbodies = GetComponentsInChildren<Rigidbody>();
-            velocities = new Vector3[rigidbodies.Length];
+            velocityHistory = new Vector3[rigidbodies.Length, HISTORY_SIZE];
+            restoredVelocities = new Vector3[rigidbodies.Length];
         }
+
         void Start()
         {
             universe.RegisterOffsettable(this);
         }
+
         void Update()
         {
-            for (int i = 0; i < rigidbodies.Length; i++)
+            if (restore_frames < 1)
             {
-                if ((rigidbodies[i].velocity).sqrMagnitude > 0.01f)
-                    velocities[i] = rigidbodies[i].velocity;
+                for (int i = 0; i < rigidbodies.Length; i++)
+                {
+                    velocityHistory[i, bufferIndex] = rigidbodies[i].velocity;
+                }
+
+                bufferIndex = (bufferIndex + 1) % HISTORY_SIZE;
+            }
+            else
+            {
+                for (int i = 0; i < rigidbodies.Length; i++)
+                {
+                    rigidbodies[i].velocity = restoredVelocities[i];
+                    Debug.Log($"Restored velocity {rigidbodies[i].velocity} to {rigidbodies[i].gameObject.name}");
+                }
+                restore_frames--;
             }
         }
+
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
+            // Evaluate ring buffer history for each rigidbody to find highest velocity
             for (int i = 0; i < rigidbodies.Length; i++)
             {
-                rigidbodies[i].velocity = velocities[i];
-                Debug.Log($"Restored velocity {rigidbodies[i].velocity} to {rigidbodies[i].gameObject.name}");
+                Vector3 maxVel = Vector3.zero;
+                float maxSqrMag = -1f;
+
+                for (int b = 0; b < HISTORY_SIZE; b++)
+                {
+                    float sqrMag = velocityHistory[i, b].sqrMagnitude;
+                    if (sqrMag > maxSqrMag)
+                    {
+                        maxSqrMag = sqrMag;
+                        maxVel = velocityHistory[i, b];
+                    }
+                }
+
+                restoredVelocities[i] = maxVel;
             }
+
+            restore_frames = HISTORY_SIZE;
         }
 
         public Scene GetSceneKey()

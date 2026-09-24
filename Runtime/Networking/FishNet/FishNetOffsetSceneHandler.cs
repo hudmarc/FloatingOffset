@@ -50,7 +50,8 @@ namespace FloatingOffset.Runtime.Example
                     {
                         OffsetX = scene.offset.x,
                         OffsetY = scene.offset.y,
-                        OffsetZ = scene.offset.z
+                        OffsetZ = scene.offset.z,
+                        ViewNob = nob
                     };
                     if (universe.logging)
                         Debug.Log("Sent broadcast to client");
@@ -94,9 +95,6 @@ namespace FloatingOffset.Runtime.Example
 
             if (offsetMono.TryGetComponent(out NetworkObject nob))
             {
-                // Use Unity's SceneManager to move the specific object to a specifc scene.
-                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
-                // Then you can tell FishNet to rebuild the observers.
                 InstanceFinder.ServerManager.Objects.RebuildObservers();
 
                 if (!nob.IsOwner)
@@ -106,7 +104,8 @@ namespace FloatingOffset.Runtime.Example
                     {
                         OffsetX = offset.x,
                         OffsetY = offset.y,
-                        OffsetZ = offset.z
+                        OffsetZ = offset.z,
+                        ViewNob = nob
                     };
 
                     if (nob.Owner.IsValid)

@@ -44,10 +44,6 @@ namespace FloatingOffset.Runtime
             if (universe.ServerActive)
                 universe.server.UnregisterView(view);
         }
-        public void AddOffset(Scene scene)
-        {
-            current_offsets.Add(scene, Vector3d.zero);
-        }
         public virtual Vector3d GetOffset(Scene scene) => current_offsets.ContainsKey(scene) ? current_offsets[scene] : Vector3d.zero;
         public void SetOffset(Scene key, Vector3d offset)
         {
