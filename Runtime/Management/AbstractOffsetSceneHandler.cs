@@ -31,6 +31,8 @@ namespace FloatingOffset.Runtime
         /// <param name="delta"></param>
         virtual public void PhysicsProcess(float delta)
         {
+            if (state == null)
+                return;
             foreach (var scene in state.scenes)
             {
                 if (scene.IsValid() && scene.GetPhysicsScene() != Physics.defaultPhysicsScene)

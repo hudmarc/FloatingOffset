@@ -49,7 +49,6 @@ namespace FloatingOffset.Runtime.Example
                 for (int i = 0; i < rigidbodies.Length; i++)
                 {
                     rigidbodies[i].velocity = restoredVelocities[i];
-                    Debug.Log($"Restored velocity {rigidbodies[i].velocity} to {rigidbodies[i].gameObject.name}");
                 }
                 restore_frames--;
             }

@@ -7,6 +7,8 @@ using FloatingOffset.Runtime.Types;
 using UnityEngine.SceneManagement;
 using FishNet;
 using System.Collections.Generic;
+using FishNet.Managing.Timing;
+using System.Collections;
 
 namespace FloatingOffset.Runtime.Example
 {
@@ -107,28 +109,44 @@ namespace FloatingOffset.Runtime.Example
             {
                 Vector3d initial_offset = state.GetOffset(view.gameObject.scene);
 
-                ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
-                {
-                    OffsetX = initial_offset.x,
-                    OffsetY = initial_offset.y,
-                    OffsetZ = initial_offset.z,
-                    ViewNob = nob
-                };
-
-                nob.Owner.Broadcast(responseMsg);
+                StartCoroutine(SendInitialOffsetWhenReady(nob, initial_offset));
             }
         }
 
-        /// <summary>
-        /// This runs only on the client that originally made the request.
-        /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="channel"></param>
+        private IEnumerator SendInitialOffsetWhenReady(NetworkObject nob, Vector3d initial_offset)
+        {
+            while (!nob.Owner.IsActive)
+            {
+                yield return null;
+            }
+            ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
+            {
+                OffsetX = initial_offset.x,
+                OffsetY = initial_offset.y,
+                OffsetZ = initial_offset.z,
+                ViewNob = nob,
+                Tick = InstanceFinder.TimeManager.Tick
+            };
+
+            Debug.Log($"({InstanceFinder.TimeManager.Tick}) Sending initial offset {initial_offset} to client {nob.Owner}");
+
+            nob.Owner.Broadcast(responseMsg);
+        }
+
         private void OnClientReceivedOffset(ReceiveOffsetBroadcast msg, Channel channel)
         {
+            StartCoroutine(OnClientReceivedOffsetRoutine(msg, channel));
+        }
+
+        private IEnumerator OnClientReceivedOffsetRoutine(ReceiveOffsetBroadcast msg, Channel channel)
+        {
+            while (msg.Tick > InstanceFinder.TimeManager.LocalTick)
+            {
+                yield return null;
+            }
             var new_offset = new Vector3d(msg.OffsetX, msg.OffsetY, msg.OffsetZ);
             if (universe.logging)
-                Debug.Log($"OFFSET CLIENT: [Local Scene]\n{current_offset}->{new_offset} ]");
+                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET CLIENT: [Local Scene]\n{current_offset}->{new_offset} ]");
             if (universe.manager.TryGetOffsettable(msg.ViewNob.gameObject.scene, out List<IOffsettable<Scene>> list))
             {
                 offsetter.Offset(current_offset, new_offset, msg.ViewNob.gameObject.scene, list.ToArray());
@@ -150,5 +168,6 @@ namespace FloatingOffset.Runtime.Example
     {
         public double OffsetX, OffsetY, OffsetZ;
         public NetworkObject ViewNob;
+        public uint Tick;
     }
 }

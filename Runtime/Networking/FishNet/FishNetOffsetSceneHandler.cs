@@ -24,7 +24,7 @@ namespace FloatingOffset.Runtime.Example
                 return;
 
             if (universe.logging)
-                Debug.Log($"OFFSET: [{scene.key.handle.ToHex()}]\n{state.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.handle.ToHex()}]\n{state.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
             Vector3d old_offset = state.GetOffset(key);
             state.SetOffset(key, scene.offset);
 
@@ -51,7 +51,8 @@ namespace FloatingOffset.Runtime.Example
                         OffsetX = scene.offset.x,
                         OffsetY = scene.offset.y,
                         OffsetZ = scene.offset.z,
-                        ViewNob = nob
+                        ViewNob = nob,
+                        Tick = InstanceFinder.TimeManager.Tick
                     };
                     if (universe.logging)
                         Debug.Log("Sent broadcast to client");
@@ -105,7 +106,8 @@ namespace FloatingOffset.Runtime.Example
                         OffsetX = offset.x,
                         OffsetY = offset.y,
                         OffsetZ = offset.z,
-                        ViewNob = nob
+                        ViewNob = nob,
+                        Tick = InstanceFinder.TimeManager.Tick
                     };
 
                     if (nob.Owner.IsValid)
