@@ -187,7 +187,12 @@ namespace FloatingOffset.Runtime
                 entryIndex = entries_next[entryIndex];
             }
         }
-
+        /// <summary>
+        /// Finds any views in the target grid. No guarantees made about which view will be returned. Returns '-1' if no views were found.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="view_positions"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int FindAnyInGrid(Vector3d position, Vector3d[] view_positions)
         {

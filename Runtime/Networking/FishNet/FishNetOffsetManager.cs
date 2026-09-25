@@ -147,9 +147,9 @@ namespace FloatingOffset.Runtime.Example
             var new_offset = new Vector3d(msg.OffsetX, msg.OffsetY, msg.OffsetZ);
             if (universe.logging)
                 Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET CLIENT: [Local Scene]\n{current_offset}->{new_offset} ]");
-            if (universe.manager.TryGetOffsettable(msg.ViewNob.gameObject.scene, out List<IOffsettable<Scene>> list))
+            if (universe.manager.GetOffsettablesInScene(msg.ViewNob.gameObject.scene, out var offsettables))
             {
-                offsetter.Offset(current_offset, new_offset, msg.ViewNob.gameObject.scene, list.ToArray());
+                offsetter.Offset(current_offset, new_offset, msg.ViewNob.gameObject.scene, offsettables);
             }
             else
             {

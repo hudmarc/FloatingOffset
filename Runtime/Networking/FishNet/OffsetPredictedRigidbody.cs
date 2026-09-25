@@ -6,11 +6,11 @@ namespace FloatingOffset.Runtime.Example
 {
     public class OffsetPredictedRigidbody : OffsetBehaviour, IOffsettable<Scene>
     {
-        private const int HISTORY_SIZE = 120;
+        private const int HISTORY_SIZE = 15;
 
         private OffsetView view;
         private Rigidbody[] rigidbodies = new Rigidbody[0];
-        
+
         // Ring buffer storing velocity history: [rigidbodyIndex, historyIndex]
         private Vector3[,] velocityHistory;
         private Vector3[] restoredVelocities = new Vector3[0];
@@ -48,7 +48,12 @@ namespace FloatingOffset.Runtime.Example
             {
                 for (int i = 0; i < rigidbodies.Length; i++)
                 {
-                    rigidbodies[i].velocity = restoredVelocities[i];
+                    float maxSqrMag = 1f;
+                    if (rigidbodies[i].velocity.sqrMagnitude < maxSqrMag)
+                    {
+                        rigidbodies[i].velocity = restoredVelocities[i];
+                    }
+                    rigidbodies[i].WakeUp();
                 }
                 restore_frames--;
             }
@@ -60,7 +65,7 @@ namespace FloatingOffset.Runtime.Example
             for (int i = 0; i < rigidbodies.Length; i++)
             {
                 Vector3 maxVel = Vector3.zero;
-                float maxSqrMag = -1f;
+                float maxSqrMag = 1f;
 
                 for (int b = 0; b < HISTORY_SIZE; b++)
                 {
@@ -73,14 +78,18 @@ namespace FloatingOffset.Runtime.Example
                 }
 
                 restoredVelocities[i] = maxVel;
+                rigidbodies[i].Sleep();
             }
 
             restore_frames = HISTORY_SIZE;
         }
 
-        public Scene GetSceneKey()
+        public Scene GetSceneKey() => gameObject.scene;
+        public bool IsValid() => this != null;
+
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            return gameObject.scene;
+            
         }
     }
 }

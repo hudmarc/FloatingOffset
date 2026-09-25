@@ -69,10 +69,22 @@ namespace FloatingOffset.Runtime
             /// <param name="scene"></param>
             void OnOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey scene);
             /// <summary>
+            /// Called before this offsettable's scene is offset.
+            /// </summary>
+            /// <param name="old_offset"></param>
+            /// <param name="new_offset"></param>
+            /// <param name="scene"></param>
+            void OnPreOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey scene);
+            /// <summary>
             /// The key of the scene this offsettable object resides in.
             /// </summary>
             /// <returns></returns>
             TSceneKey GetSceneKey();
+            /// <summary>
+            /// Returns true if the game object associated with this offsettable exists, otherwise false.
+            /// </summary>
+            /// <returns></returns>
+            bool IsValid();
         }
         public interface IOffsetHandler<TSceneKey>
         {

@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,11 +17,11 @@ namespace FloatingOffset.Runtime
         /// <param name="new_offset"></param>
         /// <param name="scene"></param>
         /// <param name="offsettables"></param>
-        public void Offset(Vector3d old_offset, Vector3d new_offset, Scene scene, IOffsettable<Scene>[] offsettables = null)
+        public void Offset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables = null)
         {
             OnOffset(old_offset, new_offset, scene, offsettables); //Calls MoveRootTransforms internally
         }
-        protected virtual void MoveRootTransforms(Vector3 offset, Scene scene)
+        private void MoveRootTransforms(Vector3 offset, Scene scene)
         {
             var objects = scene.GetRootGameObjects();
             foreach (GameObject g in objects)
@@ -30,17 +31,23 @@ namespace FloatingOffset.Runtime
             }
         }
 
-        protected virtual void MoveOffsettables(IOffsettable<Scene>[] offsettables, Vector3d old_offset, Vector3d new_offset, Scene scene)
+        private void OffsettableCallback(ReadOnlyCollection<IOffsettable<Scene>> offsettables, Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            for (int i = 0; i < offsettables.Length; i++)
-            {
-                offsettables[i].OnOffset(old_offset, new_offset, scene);
-            }
+
         }
-        protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, IOffsettable<Scene>[] offsettables)
+
+
+        protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
             Vector3d real_difference = old_offset - new_offset;
             Vector3 difference = UnityFunctions.toVector3(real_difference);
+
+            if (offsettables != null)
+                for (int i = 0; i < offsettables.Count; i++)
+                {
+                    if (offsettables[i].GetSceneKey() == scene)
+                        offsettables[i].OnPreOffset(old_offset, new_offset, scene);
+                }
 
             MoveRootTransforms(difference, scene);
 
@@ -50,7 +57,11 @@ namespace FloatingOffset.Runtime
                 MoveRootTransforms(remainder, scene);
 
             if (offsettables != null)
-                MoveOffsettables(offsettables, old_offset, new_offset, scene);
+                for (int i = 0; i < offsettables.Count; i++)
+                {
+                    if (offsettables[i].GetSceneKey() == scene)
+                        offsettables[i].OnOffset(old_offset, new_offset, scene);
+                }
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,11 +16,7 @@ namespace FloatingOffset.Runtime
         protected AbstractOffsetSceneHandler handler;
         [SerializeField]
         protected OffsetStateManager state;
-
-        private int offsettable_count = 0;
-
-
-        protected Dictionary<Scene, List<IOffsettable<Scene>>> offsettables = new Dictionary<Scene, List<IOffsettable<Scene>>>();
+        protected List<IOffsettable<Scene>> offsettables = new List<IOffsettable<Scene>>();
 
 
         /// <summary>
@@ -63,33 +60,48 @@ namespace FloatingOffset.Runtime
         /// <param name="view"></param>
         /// <returns></returns>
         public abstract Vector3d GetLocalOffset(IOffsetObject<Scene> view);
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
+        public void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettables.Add(offsettable);
+
+        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettables.Remove(offsettable);
+
+        public int OffsettableCount() => offsettables.Count;
+
+        List<IOffsettable<Scene>> temp = new List<IOffsettable<Scene>>();
+        public bool GetOffsettablesInScene(Scene scene, out ReadOnlyCollection<IOffsettable<Scene>> found)
         {
-            if (!offsettables.ContainsKey(scene))
-                offsettables.Add(scene, new List<IOffsettable<Scene>> { offsettable });
-            else
-                offsettables[scene].Add(offsettable);
-
-            offsettable_count++;
-        }
-
-        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene)
-        {
-            if (offsettables.ContainsKey(scene))
+            while (offsettables[offsettables.Count - 1] == null)
             {
-                offsettables[scene].Remove(offsettable);
-                offsettable_count--;
+                offsettables.RemoveAt(offsettables.Count - 1);
             }
-            else
+            temp.Clear();
+
+            for (int i = 0; i < offsettables.Count; i++)
             {
-                throw new Exception("Offsettable not found in expected scene. Offsettables cannot be moved between scenes.");
+                var offsettable = offsettables[i];
+
+                if (offsettable is UnityEngine.Object unityObj && unityObj == null)
+                {
+                    offsettables.RemoveAt(i);
+                    continue;
+                }
+
+                if (!offsettable.IsValid())
+                {
+                    offsettables.RemoveAt(i);
+                    continue;
+                }
+
+                if (offsettable.GetSceneKey() == scene)
+                {
+                    temp.Add(offsettable);
+                }
             }
+
+            found = temp.AsReadOnly();
+
+            if (temp.Count < 1)
+                return false;
+            return true;
         }
-        public int OffsettableCount() => offsettable_count;
-
-        public bool TryGetOffsettable(Scene key, out List<IOffsettable<Scene>> list) => offsettables.TryGetValue(key, out list);
-
-        public int CountOffsettables() => offsettable_count;
-
     }
 }

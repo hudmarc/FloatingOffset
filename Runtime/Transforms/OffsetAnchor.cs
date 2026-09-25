@@ -59,9 +59,11 @@ namespace FloatingOffset.Runtime
             realPosition = new_position;
         }
 
-        public Scene GetSceneKey()
+        public Scene GetSceneKey() => scene;
+        public bool IsValid() => this != null;
+
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            return scene;
         }
     }
 }

@@ -28,9 +28,9 @@ namespace FloatingOffset.Runtime.Example
             Vector3d old_offset = state.GetOffset(key);
             state.SetOffset(key, scene.offset);
 
-            if (universe.manager.TryGetOffsettable(scene.key, out List<IOffsettable<Scene>> list))
+            if (universe.manager.GetOffsettablesInScene(scene.key, out var offsettables))
             {
-                offsetter.Offset(old_offset, state.GetOffset(key), scene.key, list.ToArray());
+                offsetter.Offset(old_offset, state.GetOffset(key), scene.key, offsettables);
             }
             else
             {
@@ -70,13 +70,8 @@ namespace FloatingOffset.Runtime.Example
 
             UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
 
-            // Calculate the exact local Unity position required for the new scene
-            // Because Real = Unity + Offset, therefore Unity = Real - Offset
-            if (reposition)
-            {
-                Vector3d newUnityPos = absoluteRealPos - state.GetOffset(to);
-                offsetObject.SetEnginePosition(newUnityPos);
-            }
+            Vector3d newUnityPos = absoluteRealPos - state.GetOffset(to);
+            offsetObject.SetEnginePosition(newUnityPos);
 
             Scene main_scene = state.GetMainSceneKey();
 
@@ -92,7 +87,7 @@ namespace FloatingOffset.Runtime.Example
             }
 
             if (universe.logging)
-                Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} to {to.handle.ToHex()}");
+                Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} {state.GetOffset(from)} to {to.handle.ToHex()} {state.GetOffset(to)} ");
 
             if (offsetMono.TryGetComponent(out NetworkObject nob))
             {

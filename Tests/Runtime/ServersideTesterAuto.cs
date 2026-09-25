@@ -122,7 +122,7 @@ namespace FloatingOffset.Runtime
             GameObject.DestroyImmediate(view.gameObject);
             GameObject.DestroyImmediate(origin.gameObject);
 
-            Assert.AreEqual(0, universe.state.CountOffsettables());
+            Assert.AreEqual(0, universe.manager.OffsettableCount());
             Assert.AreEqual(0, universe.manager.CountRegisteredViews());
 
             yield return null; //one frame
@@ -155,11 +155,11 @@ namespace FloatingOffset.Runtime
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
 
-            Debug.Log($"Offsettables {universe.state.CountOffsettables()}");
+            Debug.Log($"Offsettables {universe.manager.OffsettableCount()}");
             Debug.Log($"Registered Views {universe.manager.CountRegisteredViews()}");
             Debug.Log($"Views {universe.manager.CountViews()}");
 
-            Assert.AreEqual(1, universe.state.CountOffsettables());
+            Assert.AreEqual(1, universe.manager.OffsettableCount());
             Assert.AreEqual(1, universe.manager.CountRegisteredViews());
 
             GameObject.Destroy(view.gameObject);
@@ -167,7 +167,7 @@ namespace FloatingOffset.Runtime
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, universe.state.CountOffsettables());
+            Assert.AreEqual(0, universe.manager.OffsettableCount());
             Assert.AreEqual(0, universe.manager.CountRegisteredViews());
 
             yield return null; //one frame
