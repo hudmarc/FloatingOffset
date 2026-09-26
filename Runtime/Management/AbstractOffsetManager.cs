@@ -69,7 +69,7 @@ namespace FloatingOffset.Runtime
         List<IOffsettable<Scene>> temp = new List<IOffsettable<Scene>>();
         public bool GetOffsettablesInScene(Scene scene, out ReadOnlyCollection<IOffsettable<Scene>> found)
         {
-            while (offsettables[offsettables.Count - 1] == null)
+            while (offsettables.Count > 0 && offsettables[offsettables.Count - 1] == null)
             {
                 offsettables.RemoveAt(offsettables.Count - 1);
             }

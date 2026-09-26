@@ -58,6 +58,8 @@ namespace FloatingOffset.Runtime
             /// <returns></returns>
             bool IsValid();
             void Destroy();
+            void PreSceneTransfer();
+            void SceneTransfer();
         }
         public interface IOffsettable<TSceneKey>
         {

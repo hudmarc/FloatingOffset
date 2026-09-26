@@ -1,117 +1,68 @@
-using FloatingOffset.Runtime.Types;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class OffsetPredictedWheels : OffsetBehaviour, IOffsettable<Scene>
+    public class OffsetPredictedWheels : OffsetBehaviour
     {
-        private const int HISTORY_SIZE = 30;
-
         private OffsetView view;
-        private Rigidbody[] rigidbodies = new Rigidbody[0];
-        private WheelCollider[] wheels = new WheelCollider[0];
-
-        private Vector3[,] velocityHistory;
-        private Vector3[] restoredVelocities = new Vector3[0];
-        private int bufferIndex = 0;
-
-        private int restore_ticks = 0;
-
-        void Awake()
-        {
-            view = GetComponent<OffsetView>();
-            rigidbodies = GetComponentsInChildren<Rigidbody>();
-            wheels = GetComponentsInChildren<WheelCollider>();
-
-            velocityHistory = new Vector3[rigidbodies.Length, HISTORY_SIZE];
-            restoredVelocities = new Vector3[rigidbodies.Length];
-        }
+        private WheelState[] cachedWheelStates;
+        private WheelCollider[] wheels;
+        private Rigidbody rb;
+        private Vector3 cachedVelocity;
+        private Vector3 cachedAngularVelocity;
 
         void Start()
         {
-            universe.RegisterOffsettable(this);
+            wheels = GetComponentsInChildren<WheelCollider>();
+            cachedWheelStates = new WheelState[wheels.Length];
+            rb = GetComponent<Rigidbody>();
+            view = GetComponent<OffsetView>();
+            view.OnPreSceneTransfer += CacheState;
+            view.OnSceneTransfer += ReapplyState;
+        }
+        void OnDestroy()
+        {
+            view.OnPreSceneTransfer -= CacheState;
+            view.OnSceneTransfer -= ReapplyState;
+        }
+        private struct WheelState
+        {
+            public float motorTorque;
+            public float brakeTorque;
+            public float steerAngle;
         }
 
-        // Use FixedUpdate so this runs in step with PhysX / FishNet simulation ticks
-        void FixedUpdate()
+        public void CacheState()
         {
-            if (restore_ticks < 1)
+            cachedVelocity = rb.velocity;
+            cachedAngularVelocity = rb.angularVelocity;
+
+            for (int i = 0; i < wheels.Length; i++)
             {
-                // Record current velocities into the ring buffer
-                for (int i = 0; i < rigidbodies.Length; i++)
+                cachedWheelStates[i] = new WheelState
                 {
-                    velocityHistory[i, bufferIndex] = rigidbodies[i].velocity;
-                }
-
-                bufferIndex = (bufferIndex + 1) % HISTORY_SIZE;
-            }
-            else
-            {
-                // Re-apply velocity and synchronize wheel rotation on EVERY physics tick
-                for (int i = 0; i < rigidbodies.Length; i++)
-                {
-                    Rigidbody rb = rigidbodies[i];
-                    Vector3 targetVel = restoredVelocities[i];
-
-                    rb.velocity = targetVel;
-
-                    // Match wheel spinning speed to forward chassis velocity
-                    ApplyWheelVelocitySync(rb, targetVel);
-                }
-
-                restore_ticks--;
+                    motorTorque = wheels[i].motorTorque,
+                    brakeTorque = wheels[i].brakeTorque,
+                    steerAngle = wheels[i].steerAngle
+                };
             }
         }
 
-        private void ApplyWheelVelocitySync(Rigidbody rb, Vector3 targetVelocity)
+        public void ReapplyState()
         {
-            float forwardSpeed = Vector3.Dot(targetVelocity, rb.transform.forward);
+            rb.velocity = cachedVelocity;
+            rb.angularVelocity = cachedAngularVelocity;
 
-            foreach (var wheel in wheels)
+            for (int i = 0; i < wheels.Length; i++)
             {
-                // Calculate required RPM from linear forward speed
-                float circumference = 2f * Mathf.PI * wheel.radius;
-                float targetRpm = (forwardSpeed / circumference) * 60f;
+                // Force PhysX object rebuild to fix the desync
+                wheels[i].enabled = false;
+                wheels[i].enabled = true;
 
-                // Unity WheelCollider.rotationSpeed is in degrees/second (1 RPM = 6 deg/sec)
-                wheel.rotationSpeed = targetRpm * 6f;
-
-                // Clear any residual brake torque that would fight the restoration
-                wheel.brakeTorque = 0f;
+                wheels[i].motorTorque = cachedWheelStates[i].motorTorque;
+                wheels[i].brakeTorque = cachedWheelStates[i].brakeTorque;
+                wheels[i].steerAngle = cachedWheelStates[i].steerAngle;
             }
-        }
-
-        public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
-        {
-            // Pick peak velocity from ring buffer
-            for (int i = 0; i < rigidbodies.Length; i++)
-            {
-                Vector3 maxVel = Vector3.zero;
-                float maxSqrMag = -1f;
-
-                for (int b = 0; b < HISTORY_SIZE; b++)
-                {
-                    float sqrMag = velocityHistory[i, b].sqrMagnitude;
-                    if (sqrMag > maxSqrMag)
-                    {
-                        maxSqrMag = sqrMag;
-                        maxVel = velocityHistory[i, b];
-                    }
-                }
-
-                restoredVelocities[i] = maxVel;
-            }
-
-            restore_ticks = HISTORY_SIZE;
-        }
-
-        public Scene GetSceneKey() => gameObject.scene;
-        public bool IsValid() => this != null;
-
-        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
-        {
-            
         }
     }
 }

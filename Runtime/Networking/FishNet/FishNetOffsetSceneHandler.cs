@@ -68,10 +68,14 @@ namespace FloatingOffset.Runtime.Example
 
             MonoBehaviour offsetMono = (MonoBehaviour)offsetObject;
 
+            offsetObject.PreSceneTransfer();
+
             UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
 
             Vector3d newUnityPos = absoluteRealPos - state.GetOffset(to);
             offsetObject.SetEnginePosition(newUnityPos);
+
+            offsetObject.SceneTransfer();
 
             Scene main_scene = state.GetMainSceneKey();
 

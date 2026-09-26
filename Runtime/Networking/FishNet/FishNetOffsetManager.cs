@@ -115,10 +115,14 @@ namespace FloatingOffset.Runtime.Example
 
         private IEnumerator SendInitialOffsetWhenReady(NetworkObject nob, Vector3d initial_offset)
         {
-            while (!nob.Owner.IsActive)
+            int timeout = 240;
+            while (!nob.IsOwner && !nob.Owner.IsActive && timeout > 0)
             {
                 yield return null;
+                timeout--;
             }
+            if (timeout < 1)
+                Debug.LogWarning("Network object owner did not resolve within 240 ticks, initial scene offset may be incorrect.");
             ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
             {
                 OffsetX = initial_offset.x,
@@ -140,10 +144,14 @@ namespace FloatingOffset.Runtime.Example
 
         private IEnumerator OnClientReceivedOffsetRoutine(ReceiveOffsetBroadcast msg, Channel channel)
         {
-            while (msg.Tick > InstanceFinder.TimeManager.LocalTick)
+            int timeout = 240;
+            while (msg.Tick > InstanceFinder.TimeManager.LocalTick && timeout > 0)
             {
                 yield return null;
+                timeout--;
             }
+            if (timeout < 1)
+                Debug.LogWarning("Server tick more than 240 frames behind client, undefined behavior may occur with offset system.");
             var new_offset = new Vector3d(msg.OffsetX, msg.OffsetY, msg.OffsetZ);
             if (universe.logging)
                 Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET CLIENT: [Local Scene]\n{current_offset}->{new_offset} ]");

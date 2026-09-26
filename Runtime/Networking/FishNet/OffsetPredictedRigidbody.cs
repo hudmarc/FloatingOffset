@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime.Example
 {
-    public class OffsetPredictedRigidbody : OffsetBehaviour, IOffsettable<Scene>
+    public class OffsetPredictedRigidbody : OffsetBehaviour
     {
         private const int HISTORY_SIZE = 15;
 
@@ -26,11 +26,6 @@ namespace FloatingOffset.Runtime.Example
             rigidbodies = GetComponentsInChildren<Rigidbody>();
             velocityHistory = new Vector3[rigidbodies.Length, HISTORY_SIZE];
             restoredVelocities = new Vector3[rigidbodies.Length];
-        }
-
-        void Start()
-        {
-            universe.RegisterOffsettable(this);
         }
 
         void Update()
@@ -86,10 +81,5 @@ namespace FloatingOffset.Runtime.Example
 
         public Scene GetSceneKey() => gameObject.scene;
         public bool IsValid() => this != null;
-
-        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
-        {
-            
-        }
     }
 }

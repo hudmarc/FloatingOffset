@@ -11,6 +11,14 @@ namespace FloatingOffset.Runtime
     /// </summary>
     public class OffsetView : OffsetBehaviour, IOffsetObject<Scene>
     {
+        /// <summary>
+        /// Invoked just before this view will be transferred between scenes.
+        /// </summary>
+        public Action OnPreSceneTransfer;
+        /// <summary>
+        /// Invoked immediately after this view will be transferred between scenes.
+        /// </summary>
+        public Action OnSceneTransfer;
         private bool registered = false;
         private bool isValid = false;
         void Start()
@@ -33,7 +41,7 @@ namespace FloatingOffset.Runtime
             isValid = false;
         }
         [Obsolete("Use TeleportTo on the OffsetUniverse")]
-        public void SetRealPositionApproximate(Vector3d position) { }
+        public void SetRealPositionApproximate(Vector3d position) { transform.position = new Vector3((float)position.x, (float)position.y, (float)position.z); }
         /// <summary>
         /// Alias for <code>universe.TeleportTo(view, position);</code>
         /// </summary>
@@ -50,6 +58,7 @@ namespace FloatingOffset.Runtime
         Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
         void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = UnityFunctions.toVector3(position);
-
+        void IOffsetObject<Scene>.PreSceneTransfer() => OnPreSceneTransfer?.Invoke();
+        void IOffsetObject<Scene>.SceneTransfer() => OnSceneTransfer?.Invoke();
     }
 }
