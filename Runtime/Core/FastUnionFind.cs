@@ -33,7 +33,6 @@ namespace FloatingOffset.Runtime
             }
         }
 
-        // Force the compiler to paste this inside your loop
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int member_index)
         {

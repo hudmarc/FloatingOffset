@@ -135,7 +135,14 @@ namespace FloatingOffset.Editor.Tests
 
         public void Destroy()
         {
-            throw new NotImplementedException();
+        }
+
+        public void PreSceneTransfer()
+        {
+        }
+
+        public void SceneTransfer()
+        {
         }
     }
 

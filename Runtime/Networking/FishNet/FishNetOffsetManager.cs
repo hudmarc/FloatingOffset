@@ -116,10 +116,14 @@ namespace FloatingOffset.Runtime.Example
         private IEnumerator SendInitialOffsetWhenReady(NetworkObject nob, Vector3d initial_offset)
         {
             int timeout = 240;
-            while (!nob.IsOwner && !nob.Owner.IsActive && timeout > 0)
+            while (!nob.Owner.IsActive && timeout > 0)
             {
                 yield return null;
                 timeout--;
+            }
+            if (!nob.Owner.IsValid)
+            {
+                yield break;
             }
             if (timeout < 1)
                 Debug.LogWarning("Network object owner did not resolve within 240 ticks, initial scene offset may be incorrect.");
@@ -133,7 +137,7 @@ namespace FloatingOffset.Runtime.Example
             };
 
             Debug.Log($"({InstanceFinder.TimeManager.Tick}) Sending initial offset {initial_offset} to client {nob.Owner}");
-
+            
             nob.Owner.Broadcast(responseMsg);
         }
 
