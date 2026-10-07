@@ -58,8 +58,10 @@ namespace FloatingOffset.Runtime
             /// <returns></returns>
             bool IsValid();
             void Destroy();
-            void PreSceneTransfer();
-            void SceneTransfer();
+            void OnPreSceneTransfer();
+            void OnSceneTransfer();
+            bool IsPlayer();
+            string GetName();
         }
         public interface IOffsettable<TSceneKey>
         {
@@ -96,13 +98,13 @@ namespace FloatingOffset.Runtime
             /// <param name="scene"></param>
             void UpdateOffset(OffsetScene<TSceneKey> scene);
             /// <summary>
-            /// Transfer the given OffsetView from the 'from' scene to the 'to' scene. If reposition is true, the position of the transform will be changed too to match the target scene's offset.
+            /// Transfer the given OffsetView from the 'from' scene to the 'to' scene.
             /// </summary>
             /// <param name="offsettable"></param>
             /// <param name="from"></param>
             /// <param name="to"></param>
             /// <param name="reposition"></param>
-            void TransferTo(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to, bool reposition = false);
+            void TransferTo(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to);
             /// <summary>
             /// Clone the given scene. Calls the callback when done.
             /// </summary>

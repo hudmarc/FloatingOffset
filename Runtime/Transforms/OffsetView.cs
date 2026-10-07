@@ -20,25 +20,48 @@ namespace FloatingOffset.Runtime
         /// </summary>
         public Action OnSceneTransfer;
         private bool registered = false;
-        private bool isValid = false;
+        [Tooltip("If true, the first instance of this prefab spawned will be considered the host's main view.")]
+        public bool IsPlayer = false;
+
         void Start()
         {
-            if (universe.state == null)
-                return;
-
-            if (enabled && !registered && transform.parent == null)
+            if (manager.IsLogging())
+                Debug.Log("Started offset view");
+            if (!manager.IsServerActive())
             {
-                universe.state.RegisterView(this);
+                manager.OnInitialOffset += OnInitialOffset;
+            }
+            else
+            {
+                Register(); // Register immediately if the server is already active. 
+            }
+        }
+        void OnInitialOffset()
+        {
+            manager.OnOffsetServerInitialized -= OnInitialOffset;
+            if (manager.IsLogging())
+                Debug.Log($"Called OnInitialOffset");
+            Register();
+        }
+        void Register()
+        {
+            if (!registered)
+            {
+                manager.RegisterView(this);
                 registered = true;
             }
-            isValid = true;
-
         }
         void OnDestroy()
         {
-            if (registered && universe.ServerActive)
-                universe.state.UnregisterView(this);
-            isValid = false;
+            if (manager.IsLogging())
+                Debug.Log($"Destroyed view {gameObject.name}");
+            if (registered && manager.IsServerActive())
+            {
+                manager.UnregisterView(this);
+                registered = false;
+                if (manager.IsLogging())
+                    Debug.Log($"Unregistered view {gameObject.name}");
+            }
         }
         [Obsolete("Use TeleportTo on the OffsetUniverse")]
         public void SetRealPositionApproximate(Vector3d position) { transform.position = new Vector3((float)position.x, (float)position.y, (float)position.z); }
@@ -46,19 +69,16 @@ namespace FloatingOffset.Runtime
         /// Alias for <code>universe.TeleportTo(view, position);</code>
         /// </summary>
         /// <param name="position"></param>
-        public void TeleportTo(Vector3d position) => universe.TeleportTo(this, position);
-        /// <summary>
-        /// The real position of this OffsetView in its Offset Universe.
-        /// </summary>
-        /// <returns>The real position.</returns>
-        public Vector3d GetRealPosition() => UnityFunctions.UnityToReal(transform.position, universe.manager.GetLocalOffset(this));
-        public bool IsValid() => isValid;
-
-        Vector3d IOffsetObject<Scene>.GetEnginePosition() => UnityFunctions.toVector3d(transform.position);
+        public void TeleportTo(Vector3d position) => OffsetUtils.TeleportTo(this, position);
+        Vector3d IOffsetObject<Scene>.GetEnginePosition() => OffsetUtils.ToVector3d(transform.position);
         Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
-        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = UnityFunctions.toVector3(position);
-        void IOffsetObject<Scene>.PreSceneTransfer() => OnPreSceneTransfer?.Invoke();
-        void IOffsetObject<Scene>.SceneTransfer() => OnSceneTransfer?.Invoke();
+        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = OffsetUtils.ToVector3(position);
+        void IOffsetObject<Scene>.OnPreSceneTransfer() => OnPreSceneTransfer?.Invoke();
+        void IOffsetObject<Scene>.OnSceneTransfer() => OnSceneTransfer?.Invoke();
+        bool IOffsetObject<Scene>.IsPlayer() => IsPlayer;
+        public bool IsValid() => registered;
+
+        public string GetName() => gameObject.name;
     }
 }

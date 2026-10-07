@@ -30,17 +30,10 @@ namespace FloatingOffset.Runtime
                     g.transform.position += offset;
             }
         }
-
-        private void OffsettableCallback(ReadOnlyCollection<IOffsettable<Scene>> offsettables, Vector3d old_offset, Vector3d new_offset, Scene scene)
-        {
-
-        }
-
-
         protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
             Vector3d real_difference = old_offset - new_offset;
-            Vector3 difference = UnityFunctions.toVector3(real_difference);
+            Vector3 difference = OffsetUtils.ToVector3(real_difference);
 
             if (offsettables != null)
                 for (int i = 0; i < offsettables.Count; i++)
@@ -51,7 +44,7 @@ namespace FloatingOffset.Runtime
 
             MoveRootTransforms(difference, scene);
 
-            Vector3 remainder = UnityFunctions.toVector3(real_difference - UnityFunctions.toVector3d(difference));
+            Vector3 remainder = OffsetUtils.ToVector3(real_difference - OffsetUtils.ToVector3d(difference));
 
             if (remainder.sqrMagnitude > 0.0f)
                 MoveRootTransforms(remainder, scene);

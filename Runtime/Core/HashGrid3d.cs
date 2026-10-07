@@ -151,14 +151,20 @@ namespace FloatingOffset.Runtime
             }
             return -1;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3d Quantize(Vector3d vector)
         {
             return new Vector3d(SymmetricFloor(vector.x * resolution_inverse), SymmetricFloor(vector.y * resolution_inverse), SymmetricFloor(vector.z * resolution_inverse));
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3d Quantize(Vector3d vector, double resolution)
+        {
+            double resolution_inverse = 1 / resolution;
+            return new Vector3d(SymmetricFloor(vector.x * resolution_inverse), SymmetricFloor(vector.y * resolution_inverse), SymmetricFloor(vector.z * resolution_inverse));
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double SymmetricFloor(double t)
+        public static double SymmetricFloor(double t)
         {
             double val = Math.Floor(Math.Abs(t));
             return t < 0 ? -val : val;

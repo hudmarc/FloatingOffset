@@ -67,6 +67,7 @@ namespace FloatingOffset.Runtime
         {
             return scenes.GetViewCount(scene);
         }
+
         /// <summary>
         /// Registers the given offset offsettable as a view.
         /// </summary>
@@ -82,6 +83,7 @@ namespace FloatingOffset.Runtime
             scenes.AddView(view.GetSceneKey());
             views.Add(view);
         }
+
         /// <summary>
         /// Downgrades the given view to a transform
         /// </summary>
@@ -161,6 +163,8 @@ namespace FloatingOffset.Runtime
 
             MarkTime(0);
 
+            int remove_count = 0;
+
             // Prune views scheduled for removal
             for (int i = 0; i < views.Count; i++)
             {
@@ -169,11 +173,13 @@ namespace FloatingOffset.Runtime
                     int lastIndex = views.Count - 1;
                     views[i] = views[lastIndex];
                     views_to_remove.Remove(views[i]);
-                    views.RemoveAt(lastIndex);
+                    remove_count++;
                     i--;
                     continue;
                 }
             }
+
+            views.RemoveRange(views.Count - remove_count, remove_count);
 
             MarkTime(1);
 
@@ -284,7 +290,7 @@ namespace FloatingOffset.Runtime
                     winners[champ.rep] = new SceneWinner(sceneIdx, champ.count, champ.winnerIndex);
                 }
             }
-            
+
 #if UNITY_EDITOR
             MarkTime(9);
 #endif
@@ -364,14 +370,14 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="handler"></param>
-        private void Transfer(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to, bool reposition = true)
+        private void Transfer(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to)
         {
             if (from.Equals(to)) //why is this so defensive? this should throw an exception because this should not happen
                 return;
 
             scenes.RemoveView(offsettable.GetSceneKey());
 
-            handler.TransferTo(offsettable, from, to, reposition);
+            handler.TransferTo(offsettable, from, to);
 
             scenes.AddView(to);
         }
@@ -430,12 +436,10 @@ namespace FloatingOffset.Runtime
 
             Vector3d origin_offset = scenes.GetOffset(origin);
 
-            // bool view_found = view_grid.TryFindInRadius(real_position, JoinDistance, out int found_view);
-
             bool request = RequestScene(source, real_position, out int found, target =>
                 {
                     // this only runs if we had to request a new scene and load it
-                    Transfer(offsetObject, origin, target, false);
+                    Transfer(offsetObject, origin, target);
                     Vector3d target_offset = scenes.GetOffset(target);
                     offsetObject.SetEnginePosition(real_position - target_offset);
                     handler.UpdateOffset(scenes.GetScene(target));
@@ -444,7 +448,7 @@ namespace FloatingOffset.Runtime
             {
                 var target = scenes.GetSceneKeyAt(found);
                 //this runs if RequestScene immediately finds an empty scene
-                Transfer(offsetObject, origin, target, false);
+                Transfer(offsetObject, origin, target);
                 offsetObject.SetEnginePosition(real_position - origin_offset);
                 handler.UpdateOffset(scenes.GetSceneAt(found));
             }

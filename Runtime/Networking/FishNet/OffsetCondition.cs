@@ -87,9 +87,9 @@ namespace FloatingOffset.Runtime
             Vector3 thisPosition = NetworkObject.transform.position;
             foreach (NetworkObject nob in connection.Objects)
             {
-                // Return false if in different scenes (different offsets!)
+                // Skip if in different scenes (different offsets!)
                 if (nob.gameObject.scene != NetworkObject.gameObject.scene)
-                    return false;
+                    continue;
                 // If within distance.
                 if (Vector3.SqrMagnitude(nob.transform.position - thisPosition) <= sqrMaximumDistance)
                     return true;

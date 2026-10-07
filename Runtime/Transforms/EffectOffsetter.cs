@@ -29,7 +29,7 @@ namespace FloatingOffset.Runtime
         protected override void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
             base.OnOffset(old_offset, new_offset, scene, offsettables);
-            Vector3 delta = UnityFunctions.toVector3(new_offset - old_offset);
+            Vector3 delta = OffsetUtils.ToVector3(new_offset - old_offset);
             // 2. Move world-space visual components
             if (worldSpaceParticles.Length > 0) ShiftWorldParticles(delta);
             if (worldSpaceLines.Length > 0) ShiftLines(delta);

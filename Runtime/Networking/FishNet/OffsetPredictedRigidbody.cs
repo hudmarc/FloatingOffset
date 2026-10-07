@@ -1,4 +1,3 @@
-using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,8 +14,7 @@ namespace FloatingOffset.Runtime.Example
         private Vector3[,] velocityHistory;
         private Vector3[] restoredVelocities = new Vector3[0];
         private int bufferIndex = 0;
-
-        [SerializeField] int restoreFrames = 120;
+        [SerializeField]
         private int restore_frames = 0;
 
         void Awake()
@@ -27,7 +25,6 @@ namespace FloatingOffset.Runtime.Example
             velocityHistory = new Vector3[rigidbodies.Length, HISTORY_SIZE];
             restoredVelocities = new Vector3[rigidbodies.Length];
         }
-
         void Update()
         {
             if (restore_frames < 1)
@@ -53,7 +50,6 @@ namespace FloatingOffset.Runtime.Example
                 restore_frames--;
             }
         }
-
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
             // Evaluate ring buffer history for each rigidbody to find highest velocity

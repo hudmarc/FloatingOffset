@@ -16,12 +16,12 @@ namespace FloatingOffset.Runtime
         private bool initialized = false;
         void Awake()
         {
-            if (!universe.ServerActive)
+            if (!manager.IsServerActive())
                 return;
 
             initialized = true;
             scene = gameObject.scene;
-            universe.manager.RegisterOffsettable(this, this.GetSceneKey());
+            manager.RegisterOffsettable(this, this.GetSceneKey());
         }
         void Start()
         {
@@ -30,17 +30,17 @@ namespace FloatingOffset.Runtime
                 return;
             }
             scene = gameObject.scene;
-            universe.manager.RegisterOffsettable(this, this.GetSceneKey());
+            manager.RegisterOffsettable(this, this.GetSceneKey());
 
 
-            Vector3d current_scene_offset = universe.state.GetOffset(scene);
-            transform.position = UnityFunctions.toVector3(realPosition - current_scene_offset);
+            Vector3d current_scene_offset = manager.GetLocalOffset(scene);
+            transform.position = OffsetUtils.ToVector3(realPosition - current_scene_offset);
 
         }
         void OnDestroy()
         {
             Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
-            universe.manager.UnregisterOffsettable(this, this.GetSceneKey());
+            manager.UnregisterOffsettable(this, this.GetSceneKey());
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
@@ -51,11 +51,11 @@ namespace FloatingOffset.Runtime
             }
             Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}"); //why does this return
 
-            transform.position = UnityFunctions.toVector3(realPosition - new_offset);
+            transform.position = OffsetUtils.ToVector3(realPosition - new_offset);
         }
         public void SetRealPosition(Vector3d new_position)
         {
-            transform.position = UnityFunctions.toVector3(new_position - realPosition);
+            transform.position = OffsetUtils.ToVector3(new_position - realPosition);
             realPosition = new_position;
         }
 
