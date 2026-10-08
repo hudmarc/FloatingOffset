@@ -64,12 +64,11 @@ namespace FloatingOffset.Runtime.Example
 
         #endregion
 
-        void Start()
+        void Awake()
         {
             this.localOffsetState = new LocalOffsetState(configuration.logging);
             this.offsettableRegistry = new OffsettableRegistry(configuration.logging);
             this.offsetViewRegistry = new OffsetViewRegistry(localOffsetState, configuration.logging);
-
 
             if (offsetter == null)
                 offsetter = gameObject.GetComponent<Offsetter>();
@@ -205,7 +204,7 @@ namespace FloatingOffset.Runtime.Example
             offsetViewRegistry.RegisterView(offsetView, SetupViewBeforeRegister, isOwner);
         }
         public override void UnregisterView(OffsetView offsetView) => offsetViewRegistry.UnregisterView(offsetView);
-        public override bool HasScene(Scene scene) => offsetSceneState != null ? offsetSceneState.HasScene(scene) : localOffsetState.MainView.GetSceneKey() == scene;
+        public override bool HasScene(Scene scene) => offsetSceneState != null ? offsetSceneState.HasScene(scene) : localOffsetState.GetMainSceneKey() == scene;
         public override bool IsServerActive() => this.server != null;
 
         public override bool IsLogging() => configuration.logging;

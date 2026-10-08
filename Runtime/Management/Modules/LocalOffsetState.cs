@@ -26,7 +26,7 @@ namespace FloatingOffset.Runtime
                 }
             }
         }
-        public Scene GetMainSceneKey() => mainView.GetSceneKey();
+        public Scene GetMainSceneKey() => mainView == null ? default : mainView.GetSceneKey();
 
         public bool IsMainView(IOffsetObject<Scene> offsetObject) => offsetObject == mainView;
     }

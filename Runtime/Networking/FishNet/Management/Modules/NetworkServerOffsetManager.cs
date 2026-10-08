@@ -82,17 +82,22 @@ namespace FloatingOffset.Runtime.Example
             var rootobjectsInScene = scene.GetRootGameObjects();
             for (int i = 0; i < rootobjectsInScene.Length; i++)
             {
-                Renderer[] renderers = rootobjectsInScene[i].GetComponentsInChildren<Renderer>();
+                SetGameObjectVisible(rootobjectsInScene[i], visible);
+            }
+        }
 
-                for (int j = 0; j < renderers.Length; j++)
-                {
-                    renderers[j].enabled = visible;
-                }
+        private void SetGameObjectVisible(GameObject gameObject, bool visible)
+        {
+            Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
 
-                if (rootobjectsInScene[i].TryGetComponent(out Terrain terrain))
-                {
-                    terrain.enabled = visible;
-                }
+            for (int j = 0; j < renderers.Length; j++)
+            {
+                renderers[j].enabled = visible;
+            }
+
+            if (gameObject.TryGetComponent(out Terrain terrain))
+            {
+                terrain.enabled = visible;
             }
         }
 
@@ -103,7 +108,10 @@ namespace FloatingOffset.Runtime.Example
                 if (logging)
                     Debug.Log($"Loaded scene {scene.GetHashCode().ToHex()}");
                 if (readyActions.Count > 0)
+                {
                     readyActions.Dequeue()(scene);
+                    SetSceneVisibility(scene, false); // All scenes should start invisible on the host, they only become visible when the host moves into them.
+                }
             }
             last_scene = default;
         }
@@ -182,7 +190,6 @@ namespace FloatingOffset.Runtime.Example
             }
         }
 
-        // NEW Runs on the server
         public void TransferTo(IOffsetObject<Scene> offsetObject, Scene from, Scene to)
         {
             Vector3d absoluteRealPos = sceneState.GetOffset(from) + offsetObject.GetEnginePosition();
@@ -191,8 +198,38 @@ namespace FloatingOffset.Runtime.Example
 
             offsetObject.OnPreSceneTransfer();
 
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
+            if (offsetMono.TryGetComponent(out NetworkObject nob))
+            {
+                if (!nob.IsOwner && offsetObject.IsPlayer())
+                {
+                    SceneLoadData to_sld = new SceneLoadData(to)
+                    {
+                        Options = Options
+                    };
+                    InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, to_sld); // Load the target scene on the client
+                    InstanceFinder.SceneManager.RemoveConnectionsFromScene(new FishNet.Connection.NetworkConnection[] { nob.Owner }, from);
 
+                    Vector3d toOffset = sceneState.GetOffset(to);
+
+                    ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
+                        {
+                            OffsetX = toOffset.x,
+                            OffsetY = toOffset.y,
+                            OffsetZ = toOffset.z,
+                            ViewNob = nob,
+                            Tick = InstanceFinder.TimeManager.Tick
+                        };
+
+                        if (logging)
+                            Debug.Log("Sent broadcast to client");
+                        nob.Owner.Broadcast(responseMsg);
+                }
+
+                
+                InstanceFinder.ServerManager.Objects.RebuildObservers();
+            }
+
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);
             Vector3d newUnityPos = absoluteRealPos - sceneState.GetOffset(to);
             offsetObject.SetEnginePosition(newUnityPos);
 
@@ -201,45 +238,27 @@ namespace FloatingOffset.Runtime.Example
             if (logging)
                 Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} {sceneState.GetOffset(from)} to {to.handle.ToHex()} {sceneState.GetOffset(to)} ");
 
-            if (offsetMono.TryGetComponent(out NetworkObject nob))
-            {
-                if (!nob.IsOwner && offsetObject.IsPlayer())
-                {
-                    // SceneUnloadData from_sld = new SceneUnloadData(from)
-                    // {
-                    //     Options = new UnloadOptions()
-                    //     {
-                    //         Mode = UnloadOptions.ServerUnloadMode.KeepUnused,
-                    //         Addressables = false
-                    //     }
-                    // };
-                    SceneLoadData to_sld = new SceneLoadData(to)
-                    {
-                        Options = Options
-                    };
-                    InstanceFinder.SceneManager.LoadConnectionScenes(nob.Owner, to_sld); // Load the target scene on the client
-                    InstanceFinder.SceneManager.RemoveConnectionsFromScene(new FishNet.Connection.NetworkConnection[] { nob.Owner }, from);
-
-                }
-                InstanceFinder.ServerManager.Objects.RebuildObservers();
-            }
+            
 
             Scene main_scene = localOffsetState.GetMainSceneKey();
 
             if (localOffsetState.IsMainView(offsetObject))
             {
+                // Only update the total visibility of scenes when the main view changes between scenes.
                 SetSceneVisibility(from, false);
                 SetSceneVisibility(to, true);
             }
             else
             {
-                SetSceneVisibility(from, from == main_scene);
-                SetSceneVisibility(to, to == main_scene);
+                if (to == main_scene)
+                    SetGameObjectVisible(offsetMono.gameObject, true); // Non-main views become visible when entering the main view's scene.
+                else
+                    SetGameObjectVisible(offsetMono.gameObject, false); // Non-main views become invisible when leaving the main view's scene.
             }
         }
 
         /// <summary>
-        /// NEW Clone the given scene and clears it of OffsetViews. Calls the callback when done.
+        /// Clone the given scene and clears it of OffsetViews. Calls the callback when done.
         /// </summary>
         /// <param name="scene"></param>
         /// <param name="onSceneReady"></param>
