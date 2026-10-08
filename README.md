@@ -33,7 +33,7 @@ Assuming a 4ms frame budget and a midrange server (in other words, the same cost
 
 ### Benchmarks:
 
-> If all players are clustered in one spot (generally best case)
+> If all players are clustered in one spot (all players in the same scene, generally best case)
 ```
 MultipleViewsSameClientStressTestCloseTogether (2.578s)
 ---
@@ -43,7 +43,7 @@ Worst: 5.25ms @ 3820 players
 Best: 0.0333333333333333ms @ 40 players
 ```
 
-> If players are spread out evenly (each player alone, worst case)
+> If players are all far from each other (1 scene/player, worst case)
 ```
 MultipleViewsSameClientStressTestSpreadOut (4.803s)
 ---
