@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using FloatingOffset.Runtime.Types;
-using UnityEngine;
-using static FloatingOffset.Runtime.FastUnionFind;
 
 namespace FloatingOffset.Runtime
 {
@@ -13,7 +13,7 @@ namespace FloatingOffset.Runtime
     public class OffsetServer<TSceneKey>
     {
         /// <summary>
-        /// Quickly iterable list of views. An OffsetTransform is here <==> it is considered a view.
+        /// Quickly iterable list of views. An OffsetView is here <==> it is considered a view.
         /// </summary>
         private List<IOffsetObject<TSceneKey>> views = new List<IOffsetObject<TSceneKey>>();
         private HashSet<IOffsetObject<TSceneKey>> views_to_remove = new HashSet<IOffsetObject<TSceneKey>>();
@@ -23,33 +23,31 @@ namespace FloatingOffset.Runtime
         /// </summary>
         private OffsetSceneCollection<TSceneKey> scenes = new OffsetSceneCollection<TSceneKey>();
 
-        private readonly int MaximumJoinDistance;
-        private readonly int MaximumJoinDistanceSquared;
+        private readonly int JoinDistance;
+        private readonly int JoinDistanceSquared;
 
         private readonly int SceneRadius;
         private readonly int SceneRadiusSquared;
 
         private readonly int MaxScenes;
-        private TSceneKey source;
-
+        private TSceneKey source = default;
         public IOffsetHandler<TSceneKey> handler { get; private set; }
-
-        private HashGrid view_grid;
 
         // Passing the base values as parameters with default values gives you the 
         // exact same out-of-the-box behavior, but allows for injection later if needed.
-        public OffsetServer(IOffsetHandler<TSceneKey> handler, int MinimumJoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
+        public OffsetServer(IOffsetHandler<TSceneKey> handler, int JoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
         {
-            this.MaximumJoinDistance = MinimumJoinDistance;
-            this.MaximumJoinDistanceSquared = MinimumJoinDistance * MinimumJoinDistance;
+            this.JoinDistance = JoinDistance;
+            this.JoinDistanceSquared = JoinDistance * JoinDistance;
 
-            this.SceneRadius = MinimumJoinDistance + Hysteresis;
+            this.SceneRadius = JoinDistance + Hysteresis;
             this.SceneRadiusSquared = SceneRadius * SceneRadius;
 
             this.MaxScenes = MaxScenes;
 
             this.handler = handler;
-            this.view_grid = new HashGrid(64, 64, MinimumJoinDistance);
+
+            this.grid = new HashGrid(JoinDistance, 20000);
         }
         /// <summary>
         /// Gets the offset for the given scene.
@@ -69,6 +67,7 @@ namespace FloatingOffset.Runtime
         {
             return scenes.GetViewCount(scene);
         }
+
         /// <summary>
         /// Registers the given offset offsettable as a view.
         /// </summary>
@@ -84,6 +83,7 @@ namespace FloatingOffset.Runtime
             scenes.AddView(view.GetSceneKey());
             views.Add(view);
         }
+
         /// <summary>
         /// Downgrades the given view to a transform
         /// </summary>
@@ -94,15 +94,36 @@ namespace FloatingOffset.Runtime
             views_to_remove.Add(offsettable);
         }
 
+        public int RegisteredViewCount() => views.Count - views_to_remove.Count;
+        public int ActualViewCount() => views.Count;
+
         private Vector3d[] view_positions = new Vector3d[8];
         private int[] view_scene_indexes = new int[8];
         private int[] union_counts = new int[8];
         private Vector3d[] union_sums = new Vector3d[8];
-        private ScenedUnion[] union_scene_tuples = new ScenedUnion[8];
         private FastUnionFind union = new FastUnionFind(8);
 
-        int[] neighborsBuffer = new int[8];
+        private HashGrid grid;
+        private int[] rep_target_scene = new int[8];
+        private (int rep, int count, int winnerIndex)[] scene_champions = new (int, int, int)[8];
+        private Stopwatch stopwatch = new Stopwatch();
+        public (TimeSpan, int)[] process_loop_times = new (TimeSpan, int)[14];
 
+        private string[] process_loops = {
+        "clear grid & union",
+        "prune views",
+        "prune unused empty scenes",
+        "populate caches",
+        "add views to hash grid",
+        "populate union-find",
+        "aggregate data for each union",
+        "select best union champ",
+        "map champs to winner dict",
+        "offset scenes past threshhold",
+        "request scenes/transfers",
+        "finalize offset updates",
+        };
+        public int subloop_count => process_loops.Length;
         // Tracks the current winning scene for a given root
         // Key: root | Value: (Winning Scene, Max Count, Representative View Index)
         Dictionary<int, SceneWinner> winners = new Dictionary<int, SceneWinner>();
@@ -110,120 +131,117 @@ namespace FloatingOffset.Runtime
         {
             if (view_positions.Length < count)
             {
-                int newSize = Mathd.GetNextPowerOfTwo(count);
+                int newSize = Functions.GetNextPowerOfTwo(count);
                 Array.Resize(ref view_positions, newSize);
                 Array.Resize(ref view_scene_indexes, newSize);
                 Array.Resize(ref union_counts, newSize);
                 Array.Resize(ref union_sums, newSize);
-                Array.Resize(ref union_scene_tuples, newSize);
+                Array.Resize(ref rep_target_scene, newSize);
+                Array.Resize(ref scene_champions, newSize);
             }
         }
+
+        public (string, double) averageRuntime(int index)
+        {
+            double total_time = process_loop_times[index].Item1.TotalMilliseconds;
+            double number_of_calls = process_loop_times[index].Item2;
+            double average_runtime = total_time / number_of_calls;
+            return (process_loops[index], average_runtime);
+        }
+
+        private void MarkTime(int index)
+        {
+            process_loop_times[index] = (process_loop_times[index].Item1 + stopwatch.Elapsed, process_loop_times[index].Item2 + 1);
+            stopwatch.Restart();
+        }
+
         public void Process()
         {
+            stopwatch.Restart();
             union.Clear();
-            // prune views scheduled for removal
+            grid.Clear();
+
+            MarkTime(0);
+
+            int remove_count = 0;
+
+            // Prune views scheduled for removal
             for (int i = 0; i < views.Count; i++)
             {
                 if (views_to_remove.Contains(views[i]))
                 {
                     int lastIndex = views.Count - 1;
                     views[i] = views[lastIndex];
-                    views.RemoveAt(lastIndex);
+                    views_to_remove.Remove(views[i]);
+                    remove_count++;
                     i--;
                     continue;
                 }
             }
 
+            views.RemoveRange(views.Count - remove_count, remove_count);
+
+            MarkTime(1);
+
             int view_count = views.Count;
 
-            // prune unused empty scenes
+            // Prune unused empty scenes
             if (scenes.Count > view_count * 2 && scenes.TryPopEmpty(out int empty_index))
             {
                 scenes.UnregisterAt(empty_index);
-                handler.Unload(scenes.GetKeyAt(empty_index));
+                handler.Unload(scenes.GetSceneKeyAt(empty_index));
             }
 
-
-            EnsureCapacity(views.Count);
+            EnsureCapacity(view_count);
 
             // Initialize caches
-
-            view_positions = new Vector3d[view_count];
-
-            view_grid.Clear();
-
             union.EnsureCapacity(view_count);
 
+            MarkTime(2);
+
+            // Populate caches
             for (int i = 0; i < view_count; i++)
             {
-                // Get positions
                 IOffsetObject<TSceneKey> view = views[i];
                 view_scene_indexes[i] = scenes.IndexOf(view.GetSceneKey());
 
-                Vector3d position = view_positions[i] = GetSceneOffset(scenes.GetKeyAt(view_scene_indexes[i])) + view.GetEnginePosition();
+                Vector3d position = GetSceneOffset(scenes.GetSceneKeyAt(view_scene_indexes[i])) + view.GetEnginePosition();
                 view_positions[i] = position;
 
-                // Populate hashgrid
-                view_grid.Add(position, i);
-
-                // Reset caches
                 union_counts[i] = 0;
                 union_sums[i] = Vector3d.zero;
+                scene_champions[i] = (-1, -1, -1);
             }
 
-            // Populate union-find, compute offsets for unions
+            MarkTime(3);
+
             for (int i = 0; i < view_count; i++)
             {
+                int rep = this.grid.AddToRepresentative(view_positions[i], i);
 
-                // Get the root using path compression
-                int myRoot = union.Find(i);
-                int my_scene_index = view_scene_indexes[i];
-                Vector3d my_pos = view_positions[i];
-
-                // The grid ignores anyone already in myRoot.
-                view_grid.FindNeighbors(view_positions[i], view_positions, ref neighborsBuffer, out int neighbourCount, myRoot, union.unions);
-
-                for (int j = 0; j < neighbourCount; j++)
+                if (rep != i)
                 {
-                    int neighborIndex = neighborsBuffer[j];
-
-                    if (neighborIndex != i)
-                    {
-                        // Resolve the neighbor's true root
-                        int neighborRoot = union.Find(neighborIndex);
-
-                        // If we are already in the same union, skip all heavy math.
-                        if (myRoot != neighborRoot)
-                        {
-                            // Layer Check
-                            if (scenes.SameLayer(my_scene_index, view_scene_indexes[neighborIndex]))
-                            {
-                                // Real position distance check
-                                double distance_from_neighbor = (my_pos - view_positions[neighborIndex]).sqrMagnitude;
-
-                                // If we don't merge with them this iteration, they will merge with us next iteration.
-                                if (distance_from_neighbor < MaximumJoinDistanceSquared)
-                                {
-                                    double our_separation = (my_pos - scenes.GetOffsetAt(my_scene_index)).sqrMagnitude;
-                                    double their_separation = (view_positions[neighborIndex] - scenes.GetOffsetAt(view_scene_indexes[neighborIndex])).sqrMagnitude;
-
-                                    if (our_separation <= their_separation)
-                                    {
-                                        // Merge them.
-                                        union.Union(i, neighborIndex);
-
-                                        // Because we just absorbed someone, our root might have changed.
-                                        // Update myRoot so the next iteration of the grid uses the new, larger group.
-                                        myRoot = union.Find(i);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    union.Union(rep, i);
                 }
             }
 
-            // Aggregate data for each union
+
+            MarkTime(4);
+
+            // Populate union-find using hash grid
+
+            for (int i = 0; i < view_count; i++)
+            {
+                int representative = this.grid.FindRepresentative(view_positions[i]);
+                if (representative != i)
+                {
+                    union.Union(representative, i);
+                }
+            }
+            MarkTime(5);
+
+            // calculate union sums
+
             for (int i = 0; i < view_count; i++)
             {
                 int rep = union.Find(i);
@@ -231,138 +249,135 @@ namespace FloatingOffset.Runtime
                 union_sums[rep] += view_positions[i];
             }
 
+            MarkTime(6);
+
+            // Aggregate data for union_counts (how many members are in the union)
+            // and union_sums (the total sum of positions in that union, used later to find the average)
+            for (int i = 0; i < view_count; i++)
+            {
+                int rep = union.Find(i);
+                union_counts[rep]++;
+                union_sums[rep] += view_positions[i];
+            }
 
             winners.Clear();
 
-            Array.Clear(union_scene_tuples, 0, union_scene_tuples.Length);
+            MarkTime(7);
 
+
+            // Select the best union champion for each scene
+            // We could also do this by finding the scene that is closest to the average centroid of the given union.
             for (int i = 0; i < view_count; i++)
             {
-                union_scene_tuples[i] = new ScenedUnion { scene_index = view_scene_indexes[i], representative = union.Find(i) };
-            }
+                int rep = union.Find(i);
+                int sceneIdx = view_scene_indexes[i];
+                int count = union_counts[rep];
 
-            int current_scene = union_scene_tuples[0].scene_index;
-            int current_union = union_scene_tuples[0].representative;
-            int current_run_count = 1;
-
-            int scene_champion_union = current_union;
-            int scene_champion_count = 1;
-
-            // Scan and Reduce
-            for (int i = 1; i < union_scene_tuples.Length; i++)
-            {
-                ScenedUnion item = union_scene_tuples[i];
-
-                if (item.scene_index == current_scene && item.representative == current_union)
+                if (scene_champions[sceneIdx].count < count)
                 {
-                    // Still looking at the same union in the same scene
-                    current_run_count++;
-                }
-                else
-                {
-                    // The union changed OR the scene changed. 
-                    // First, see if the run that just finished beats the current scene champion.
-                    if (current_run_count > scene_champion_count)
-                    {
-                        scene_champion_union = current_union;
-                        scene_champion_count = current_run_count;
-                    }
-
-                    // If the SCENE changed, the battle for the previous scene is officially over.
-                    if (item.scene_index != current_scene)
-                    {
-                        // Lock in the winner for the old scene
-                        winners[scene_champion_union] = new SceneWinner(current_scene, scene_champion_count, scene_champion_union);
-
-                        // Reset champion tracking for the brand new scene
-                        current_scene = item.scene_index;
-                        scene_champion_union = item.representative;
-                        scene_champion_count = 0;
-                    }
-
-                    // Reset the run tracking for the new union
-                    current_union = item.representative;
-                    current_run_count = 1;
+                    scene_champions[sceneIdx] = (rep, count, i);
                 }
             }
 
-            // Resolve the Tail
-            // Evaluate the final run that was active when the loop ended
-            if (current_run_count > scene_champion_count)
+            MarkTime(8);
+
+            // Map scene champions to winners dictionary
+            for (int sceneIdx = 0; sceneIdx < scenes.Count; sceneIdx++)
             {
-                scene_champion_union = current_union;
-                scene_champion_count = current_run_count;
+                var champ = scene_champions[sceneIdx];
+                if (champ.rep != -1)
+                {
+                    winners[champ.rep] = new SceneWinner(sceneIdx, champ.count, champ.winnerIndex);
+                }
             }
-            // Lock in the final scene
-            winners[scene_champion_union] = new SceneWinner(current_scene, scene_champion_count, scene_champion_union);
 
+#if UNITY_EDITOR
+            MarkTime(9);
+#endif
 
+            // Offset scenes whose average offset exceeds the threshhold
+            foreach (var kvp in winners)
+            {
+                int rep = kvp.Key;
+                SceneWinner winner = kvp.Value;
 
+                TSceneKey sceneKey = scenes.GetSceneKeyAt(winner.scene_index);
+                Vector3d average = union_sums[rep] / (double)union_counts[rep];
 
+                if ((average - scenes.GetOffsetAt(winner.scene_index)).squaredMagnitude > JoinDistanceSquared)
+                {
+                    scenes.Offset(sceneKey, average);
+                }
+            }
+            Array.Fill(rep_target_scene, -1, 0, view_count);
 
-            // Transfer all views that are not in the right scene && compute merges
+#if UNITY_EDITOR
+            MarkTime(10);
+#endif
+
             for (int i = 0; i < view_count; i++)
             {
                 int rep = union.Find(i);
 
+                // The view belongs to a union that won a scene
                 if (winners.TryGetValue(rep, out SceneWinner winner))
                 {
-                    TSceneKey scene = scenes.GetKeyAt(winner.scene_index);
-
                     if (!view_scene_indexes[i].Equals(winner.scene_index))
                     {
-                        // transfer the view to the scene
-                        Transfer(views[i], views[i].GetSceneKey(), scene);
-                    }
-                    if (winner.winner_index == i)
-                    {
-                        Vector3d average = union_sums[rep] / (double)union_counts[rep];
-                        if ((average - scenes.GetOffsetAt(winner.scene_index)).sqrMagnitude > MaximumJoinDistanceSquared)
-                            scenes.Offset(scene, average);
+                        Transfer(views[i], views[i].GetSceneKey(), scenes.GetSceneKeyAt(winner.scene_index));
                     }
                 }
-                // transfer with hysteresis
-                else if ((view_positions[i] - scenes.GetOffsetAt(view_scene_indexes[i])).sqrMagnitude > SceneRadiusSquared)
+                // Stragglers / Unions that did not win a scene
+                else
                 {
-                    // request new scenes for stragglers who are not part of a union or unions without assigned scenes
-                    // if we find an empty scene, great! we return it.
-                    // if not, we do nothing because this view will be moved to the first available scene as soon as the scene loads.
-                    // the flip-side: if you a player was just interacting with a bunch of other players and then they warp-speed out
-                    // they might have a frame hitch as they warp out. keep this in mind as the gamedev, or use the Teleport(view,real_position);
-                    // function on the OffsetManager.
-                    if (RequestScene(source, union_sums[rep] / (double)union_counts[rep], out int found))
+                    Vector3d sceneOffset = scenes.GetOffsetAt(view_scene_indexes[i]);
+
+                    if ((view_positions[i] - sceneOffset).squaredMagnitude > SceneRadiusSquared)
                     {
-                        // transfer the view to the scene
-                        Transfer(views[i], views[i].GetSceneKey(), scenes.GetSceneAt(found).key);
+                        int targetSceneIdx = rep_target_scene[rep];
+
+                        // If this union hasn't requested a scene yet this frame, request one for the whole group
+                        if (targetSceneIdx == -1)
+                        {
+                            Vector3d unionAvg = union_sums[rep] / (double)union_counts[rep];
+                            if (RequestScene(source, unionAvg, out int found))
+                            {
+                                targetSceneIdx = rep_target_scene[rep] = found;
+                            }
+                        }
+
+                        if (targetSceneIdx != -1)
+                        {
+                            Transfer(views[i], views[i].GetSceneKey(), scenes.GetSceneAt(targetSceneIdx).key);
+                        }
                     }
                 }
             }
 
-            // rebase all scenes whose actual offset does not match their expected offset
+            MarkTime(11);
+
+            // Finalize scene transform updates
             for (int i = 0; i < scenes.Count; i++)
             {
-                // updateOffset does nothing if the offset is already updated.
                 handler.UpdateOffset(scenes.GetSceneAt(i));
             }
-        }
 
+            MarkTime(12);
+        }
 
         /// <summary>
         /// Transfers the given offsettable to the given scene.
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="handler"></param>
-        private void Transfer(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to, bool reposition = true)
+        private void Transfer(IOffsetObject<TSceneKey> offsettable, TSceneKey from, TSceneKey to)
         {
-            if (from.Equals(to))
+            if (from.Equals(to)) //why is this so defensive? this should throw an exception because this should not happen
                 return;
-
 
             scenes.RemoveView(offsettable.GetSceneKey());
 
-            // Note the 'true'! This repositions the handler when it arrives at the target scene.
-            handler.TransferTo(offsettable, from, to, reposition);
-
+            handler.TransferTo(offsettable, from, to);
 
             scenes.AddView(to);
         }
@@ -374,7 +389,6 @@ namespace FloatingOffset.Runtime
         /// <param name="offset"></param>
         private bool RequestScene(TSceneKey source, Vector3d offset, out int found_scene, Action<TSceneKey> onSceneReady = null)
         {
-            // 1. Check for empty scenes
             if (scenes.TryPopEmpty(out int empty_index))
             {
                 OffsetScene<TSceneKey> empty_scene = scenes.OffsetAt(empty_index, offset);
@@ -385,7 +399,6 @@ namespace FloatingOffset.Runtime
             else
             {
                 found_scene = -1;
-                // 2. Prevent infinite cloning
                 if (scenes.Count <= MaxScenes)
                 {
                     handler.Clone(source, scene =>
@@ -400,9 +413,9 @@ namespace FloatingOffset.Runtime
                         onSceneReady?.Invoke(scene);
                     });
                 }
-                else if (scenes.Count > Mathd.GetNextPowerOfTwo(scenes.Capacity))
+                else if (scenes.Count > Functions.GetNextPowerOfTwo(scenes.Capacity))
                 {
-                    throw new Exception($"Exceeded maximum number of active Offset Scenes! Limit: {MaxScenes} LF: {scenes.Count}:{scenes.Capacity} Hard limit: {Mathd.GetNextPowerOfTwo(scenes.Capacity)}");
+                    throw new Exception($"Exceeded maximum number of active Offset Scenes! Limit: {MaxScenes} Load Factor: {scenes.Count}:{scenes.Capacity} Hard limit: {Functions.GetNextPowerOfTwo(scenes.Capacity)}");
                 }
 
                 return false;
@@ -420,23 +433,25 @@ namespace FloatingOffset.Runtime
         public void TeleportTo(IOffsetObject<TSceneKey> offsetObject, Vector3d real_position)
         {
             TSceneKey origin = offsetObject.GetSceneKey();
-            Vector3d offset = scenes.GetOffset(origin);
-            if ((offset + offsetObject.GetEnginePosition() - real_position).sqrMagnitude < MaximumJoinDistanceSquared)
-            {
-                offsetObject.SetEnginePosition(real_position - offset);
-                return;
-            }
+
+            Vector3d origin_offset = scenes.GetOffset(origin);
+
             bool request = RequestScene(source, real_position, out int found, target =>
-            {
-                Transfer(offsetObject, origin, target, false);
-                handler.UpdateOffset(scenes.GetScene(target));
-            });
+                {
+                    // this only runs if we had to request a new scene and load it
+                    Transfer(offsetObject, origin, target);
+                    Vector3d target_offset = scenes.GetOffset(target);
+                    offsetObject.SetEnginePosition(real_position - target_offset);
+                    handler.UpdateOffset(scenes.GetScene(target));
+                });
             if (request)
             {
-                Transfer(offsetObject, origin, scenes.GetKeyAt(found), false);
+                var target = scenes.GetSceneKeyAt(found);
+                //this runs if RequestScene immediately finds an empty scene
+                Transfer(offsetObject, origin, target);
+                offsetObject.SetEnginePosition(real_position - origin_offset);
                 handler.UpdateOffset(scenes.GetSceneAt(found));
             }
-
         }
 
         private struct ScenedUnion : IComparable<ScenedUnion>
@@ -456,9 +471,6 @@ namespace FloatingOffset.Runtime
             }
         }
     }
-
-
-
     public struct SceneWinner : IComparable<SceneWinner>, IEquatable<SceneWinner>
     {
         public int scene_index;
@@ -486,25 +498,18 @@ namespace FloatingOffset.Runtime
             // Tertiary sort: Winner Index
             return winner_index.CompareTo(other.winner_index);
         }
-
-        // IEquatable<T>: Reflection-Free Equality
         public bool Equals(SceneWinner other)
         {
             return scene_index == other.scene_index &&
                    count == other.count &&
                    winner_index == other.winner_index;
         }
-
-        // Fallback override to prevent boxing if passed as an object
         public override bool Equals(object obj)
         {
             return obj is SceneWinner other && Equals(other);
         }
-
-        // Fast HashCode
         public override int GetHashCode()
         {
-            // Using unchecked integer math is the fastest way to hash in Unity
             unchecked
             {
                 int hash = 17;

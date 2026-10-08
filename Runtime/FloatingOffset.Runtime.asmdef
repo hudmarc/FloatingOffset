@@ -1,7 +1,9 @@
 {
     "name": "FloatingOffset.Runtime",
     "rootNamespace": "FloatingOffset.Runtime",
-    "references": [],
+    "references": [
+        "GUID:cbd4e2c6fead246b09193f1f92a0be2a"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -163,7 +163,7 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="scene_index"></param>
         /// <returns></returns>
-        public TSceneKey GetKeyAt(int scene_index)
+        public TSceneKey GetSceneKeyAt(int scene_index)
         {
             return scenes[scene_index].key;
         }

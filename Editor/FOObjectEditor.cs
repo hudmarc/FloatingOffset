@@ -13,8 +13,6 @@ namespace FloatingOffset.Editor
         private UnityEditor.Editor defaultTransformEditor;
         private Vector3 targetPosition;
         private int lastTargetId = -1;
-
-        private static OffsetUniverse cachedUniverse;
         private Vector3d sceneOffset = Vector3d.zero;
 
         // The key used to save the open/closed state in the registry
@@ -37,19 +35,6 @@ namespace FloatingOffset.Editor
             }
         }
 
-        private static OffsetUniverse GetUniverse()
-        {
-            if (cachedUniverse != null) return cachedUniverse;
-
-            string[] guids = AssetDatabase.FindAssets("t:OffsetUniverse");
-            if (guids.Length > 0)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                cachedUniverse = AssetDatabase.LoadAssetAtPath<OffsetUniverse>(path);
-            }
-            return cachedUniverse;
-        }
-
         public override void OnInspectorGUI()
         {
             // 1. Draw native fields
@@ -63,11 +48,8 @@ namespace FloatingOffset.Editor
             }
 
             Transform t = target as Transform;
-            t.TryGetComponent(out OffsetTransform offset_transform);
+            t.TryGetComponent(out OffsetView offset_transform);
             if (t == null) return;
-
-            OffsetUniverse universe = GetUniverse();
-            if (universe == null) return; // Fail silently if no universe asset exists
 
             EditorGUILayout.Space();
 
@@ -79,7 +61,7 @@ namespace FloatingOffset.Editor
             string display = $"Floating Offset <{FormatCoordinate(sceneOffset.x)},{FormatCoordinate(sceneOffset.y)},{FormatCoordinate(sceneOffset.z)}>";
 
             // Draw the foldout header (true parameter allows clicking the text to toggle)
-            bool newExpandedState = EditorGUILayout.Foldout(isExpanded, Application.isPlaying && universe != null ? display : "Floating Offset", true, EditorStyles.foldoutHeader);
+            bool newExpandedState = EditorGUILayout.Foldout(isExpanded, Application.isPlaying ? display : "Floating Offset", true, EditorStyles.foldoutHeader);
 
             // Save the state if the user clicked it
             if (newExpandedState != isExpanded)
@@ -102,7 +84,7 @@ namespace FloatingOffset.Editor
                     return;
                 }
 
-                if (!universe.ServerActive || !universe.HasScene(t.gameObject.scene))
+                if (!OffsetBehaviour.manager.HasScene(t.gameObject.scene))
                 {
                     EditorGUILayout.LabelField("[Scene not registered]");
                     EditorGUILayout.EndVertical();
@@ -110,8 +92,8 @@ namespace FloatingOffset.Editor
                     return;
                 }
 
-                sceneOffset = universe.GetSceneOffset(t.gameObject.scene);
-                Vector3d position = sceneOffset + Mathd.toVector3d(t.position);
+                sceneOffset = OffsetBehaviour.manager.GetLocalOffset(t.gameObject.scene);
+                Vector3d position = sceneOffset + OffsetUtils.ToVector3d(t.position);
 
                 if (lastTargetId != t.GetInstanceID())
                 {
@@ -168,7 +150,7 @@ namespace FloatingOffset.Editor
 
                     if (offset_transform != null)
                     {
-                        universe.TeleportTo(offset_transform, targetPositionDouble);
+                        OffsetBehaviour.manager.TeleportTo(offset_transform, targetPositionDouble);
                     }
                     else
                     {

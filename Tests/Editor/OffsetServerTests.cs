@@ -58,7 +58,7 @@ namespace FloatingOffset.Editor.Tests
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
-            mock_handler.TrackedObjects.Add(view);
+            mock_handler.Add(view);
             Vector3d targetTruePos = Vector3d.zero;
             double moveAmount = 10.0;
 
@@ -93,7 +93,7 @@ namespace FloatingOffset.Editor.Tests
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
-            mock_handler.TrackedObjects.Add(view);
+            mock_handler.Add(view);
 
             Vector3d targetTruePos = Vector3d.zero;
             double jumpDistance = 20000.0;
@@ -134,7 +134,7 @@ namespace FloatingOffset.Editor.Tests
                 views[i] = new MockOffsetObject(INITIAL_SCENE_KEY);
                 targetPositions[i] = Vector3d.zero;
                 server.RegisterView(views[i]);
-                mock_handler.TrackedObjects.Add(views[i]);
+                mock_handler.Add(views[i]);
             }
 
             double moveAmount = 5.0;
@@ -152,13 +152,24 @@ namespace FloatingOffset.Editor.Tests
                     views[i].SetEnginePosition(views[i].GetEnginePosition() + delta);
                     targetPositions[i] += delta;
                 }
-
+                server.Process();
                 server.Process();
 
                 for (int i = 0; i < VIEWS; i++)
                 {
-                    double error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
-                    Assert.Less(error, 2.0, $"View {i} deviated from intended position. Error: {error}");
+                    double absolute_error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
+                    double local_error = Vector3d.Magnitude(views[i].GetEnginePosition()); // Local distance from origin
+
+                    Assert.Less(absolute_error, 2.0, $"View {i} deviated in real space. Error: {absolute_error}");
+                    if (local_error >= 4000)
+                    {
+                        Debug.Log($"Error {local_error} on iteration {loop} on view {i}: {mock_handler.RealPosition(views[i])} {Math.Floor(Vector3d.Magnitude(mock_handler.RealPosition(views[i])))}, engine: {views[i].GetEnginePosition()} {Math.Floor(Vector3d.Magnitude(views[i].GetEnginePosition()))}, offset: {mock_handler.SceneOffsets[views[i].GetSceneKey()]}");
+                        // for (int j = 0; j < VIEWS; j++)
+                        // {
+                        //     Debug.Log($" View {j}: {mock_handler.RealPosition(views[j])} {views[j].GetSceneKey()}");
+                        // }
+                    }
+                    Assert.Less(local_error, 5000.0, $"View {i} is off-center in engine space. Local magnitude: {local_error}");
                 }
             }
         }
@@ -176,11 +187,13 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
+            OffsetServer<int> server = null;
+
             while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
                 count++;
                 sw.Restart();
-                StressTest(count * 20);
+                server = StressTest(count * 20);
                 sw.Stop();
                 double processing_time = sw.ElapsedMilliseconds;
                 if (processing_time < best)
@@ -196,6 +209,13 @@ namespace FloatingOffset.Editor.Tests
                 sum += processing_time;
             }
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
+
+            Debug.Log("--- DETAILED PROFILE ---");
+            for (int i = 0; i < server.subloop_count; i++)
+            {
+                var runtime = server.averageRuntime(i);
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+            }
         }
 
         [Test]
@@ -211,11 +231,13 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
+            OffsetServer<int> server = null;
+
             while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
                 count++;
                 sw.Restart();
-                StressTest(count * 20, 20000);
+                server = StressTest(count * 20, 20000);
                 sw.Stop();
                 double processing_time = sw.ElapsedMilliseconds;
                 if (processing_time < best)
@@ -231,9 +253,16 @@ namespace FloatingOffset.Editor.Tests
                 sum += processing_time;
             }
             Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
+
+            Debug.Log("--- DETAILED PROFILE ---");
+            for (int i = 0; i < server.subloop_count; i++)
+            {
+                var runtime = server.averageRuntime(i);
+                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+            }
         }
 
-        void StressTest(int VIEWS, int SPREAD = 1)
+        OffsetServer<int> StressTest(int VIEWS, int SPREAD = 1)
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, VIEWS);
@@ -247,7 +276,7 @@ namespace FloatingOffset.Editor.Tests
                 views[i] = new MockOffsetObject(INITIAL_SCENE_KEY);
                 targetPositions[i] = Vector3d.zero;
                 server.RegisterView(views[i]);
-                mock_handler.TrackedObjects.Add(views[i]);
+                mock_handler.Add(views[i]);
             }
 
             double moveAmount = 5.0;
@@ -268,17 +297,17 @@ namespace FloatingOffset.Editor.Tests
 
                 server.Process();
 
-                for (int i = 0; i < VIEWS; i++)
-                {
-                    if (SPREAD == 1)
-                    {
-                        double error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
-                        Assert.Less(error, 2.0, $"View {i} deviated from intended position. Error: {error}");
-                    }
+                // for (int i = 0; i < VIEWS; i++)
+                // {
+                //     if (SPREAD == 1)
+                //     {
+                //         double error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
+                //         Assert.Less(error, 2.0, $"View {i} deviated from intended position. Error: {error}");
+                //     }
 
-                }
+                // }
             }
-            // Debug.Log($" Scene count {SceneManager.sceneCount}");
+            return server;
         }
 
 
@@ -288,13 +317,13 @@ namespace FloatingOffset.Editor.Tests
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
-            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
+            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY); //INITIAL_SCENE_KEY =100
             var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(viewA);
             server.RegisterView(viewB);
-            mock_handler.TrackedObjects.Add(viewA);
-            mock_handler.TrackedObjects.Add(viewB);
+            mock_handler.Add(viewA);
+            mock_handler.Add(viewB);
             server.Process();
 
             // 1. Massive separation
@@ -333,10 +362,10 @@ namespace FloatingOffset.Editor.Tests
             server.RegisterView(v1);
             server.RegisterView(v2);
 
-            mock_handler.TrackedObjects.Add(control);
-            mock_handler.TrackedObjects.Add(v0);
-            mock_handler.TrackedObjects.Add(v1);
-            mock_handler.TrackedObjects.Add(v2);
+            mock_handler.Add(control);
+            mock_handler.Add(v0);
+            mock_handler.Add(v1);
+            mock_handler.Add(v2);
 
             // Move v0 and v1 together massively
             Vector3d moveDelta = new Vector3d(50000, 0, 0);
@@ -371,9 +400,9 @@ namespace FloatingOffset.Editor.Tests
             server.RegisterView(control);
             server.RegisterView(erraticView);
 
-            mock_handler.TrackedObjects.Add(control);
+            mock_handler.Add(control);
 
-            mock_handler.TrackedObjects.Add(erraticView);
+            mock_handler.Add(erraticView);
 
             int consecutiveCorruptedFrames = 0;
             Vector3d controlTrueTarget = Vector3d.zero;

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+        <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../.build/obj/Core/</BaseIntermediateOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../../.build/bin/Core/</OutputPath>
+  </PropertyGroup>
+</Project>

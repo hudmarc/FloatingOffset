@@ -6,7 +6,7 @@ namespace FloatingOffset.Runtime
 {
     /// <summary>
     /// Offset Anchors ensure that the object they are attached to is always at the exact position specified in the OffsetAnchor's target position.<br/>
-    /// This also means that they may exist in more than one scene at a time on the server.
+    /// This also means that they may exist in more than one scene at a time on the server, unless they are paired with an OffsetView
     /// </summary>
     public class OffsetAnchor : OffsetBehaviour, IOffsettable<Scene>
     {
@@ -16,13 +16,12 @@ namespace FloatingOffset.Runtime
         private bool initialized = false;
         void Awake()
         {
-            if (!universe.ServerActive)
+            if (!manager.IsServerActive())
                 return;
 
             initialized = true;
             scene = gameObject.scene;
-            universe.RegisterOffsettable(this, scene);
-
+            manager.RegisterOffsettable(this, this.GetSceneKey());
         }
         void Start()
         {
@@ -31,27 +30,40 @@ namespace FloatingOffset.Runtime
                 return;
             }
             scene = gameObject.scene;
-            universe.RegisterOffsettable(this, scene);
+            manager.RegisterOffsettable(this, this.GetSceneKey());
 
-            Vector3d current_scene_offset = universe.GetSceneOffset(scene);
-            transform.position = Mathd.toVector3(realPosition - current_scene_offset);
 
+            Vector3d current_scene_offset = manager.GetLocalOffset(scene);
+            transform.position = OffsetUtils.ToVector3(realPosition - current_scene_offset);
+
+        }
+        void OnDestroy()
+        {
+            Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
+            manager.UnregisterOffsettable(this, this.GetSceneKey());
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}");
+            if (this == null)
+            {
+                Debug.LogWarning("Tried to call Offset on non-existent Anchor");
+                return;
+            }
+            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}"); //why does this return
 
-            transform.position = Mathd.toVector3(realPosition - new_offset);
+            transform.position = OffsetUtils.ToVector3(realPosition - new_offset);
         }
         public void SetRealPosition(Vector3d new_position)
         {
-            transform.position = Mathd.toVector3(new_position - realPosition);
+            transform.position = OffsetUtils.ToVector3(new_position - realPosition);
             realPosition = new_position;
         }
 
-        public Scene GetSceneKey()
+        public Scene GetSceneKey() => scene;
+        public bool IsValid() => this != null;
+
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            return scene;
         }
     }
 }
