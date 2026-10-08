@@ -175,7 +175,7 @@ namespace FloatingOffset.Editor.Tests
         }
 
         [Test]
-        public void MultipleViewsSameClientStressTestWorstCase()
+        public void MultipleViewsSameClientStressTestCloseTogether()
         {
             int count = 1;
 

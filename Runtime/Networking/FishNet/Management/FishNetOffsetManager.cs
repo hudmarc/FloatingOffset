@@ -206,7 +206,9 @@ namespace FloatingOffset.Runtime.Example
         public override void UnregisterView(OffsetView offsetView) => offsetViewRegistry.UnregisterView(offsetView);
         public override bool HasScene(Scene scene) => offsetSceneState != null ? offsetSceneState.HasScene(scene) : localOffsetState.GetMainSceneKey() == scene;
         public override bool IsServerActive() => this.server != null;
-
         public override bool IsLogging() => configuration.logging;
+        public override int OffsettableCount() => offsettableRegistry.Count;
+        public override int CountRegisteredViews() => offsetViewRegistry.CountRegisteredViews();
+        public override int CountViews() => offsetViewRegistry.CountViews();
     }
 }

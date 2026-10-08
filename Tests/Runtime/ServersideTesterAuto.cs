@@ -22,8 +22,7 @@ namespace FloatingOffset.Runtime
         private const float TEST_ITERATIONS = 128;
         public const string TEST_SCENE_NAME = "Offline Automated Testing Scene";
 
-        private AbstractOffsetManager manager;
-        private OffsetUniverse universe;
+        private OffsetManager manager;
         private NetworkManager networkManager;
 
         [UnitySetUp]
@@ -54,9 +53,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForFixedUpdate();
             }
 
-            var manager = Component.FindFirstObjectByType<AbstractOffsetManager>();
-
-            universe = manager.universe;
+            var manager = Component.FindFirstObjectByType<OffsetManager>();
             Debug.Log("------- Setup complete -------");
         }
 
@@ -91,7 +88,7 @@ namespace FloatingOffset.Runtime
             }
 
             manager = null;
-            universe = null;
+
             networkManager = null;
         }
         /// <summary>
@@ -114,7 +111,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -122,12 +119,12 @@ namespace FloatingOffset.Runtime
             GameObject.DestroyImmediate(view.gameObject);
             GameObject.DestroyImmediate(origin.gameObject);
 
-            Assert.AreEqual(0, universe.manager.OffsettableCount());
-            Assert.AreEqual(0, universe.manager.CountRegisteredViews());
+            Assert.AreEqual(0, manager.OffsettableCount());
+            Assert.AreEqual(0, manager.CountRegisteredViews());
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, universe.manager.CountViews());
+            Assert.AreEqual(0, manager.CountViews());
 
         }
         /// <summary>
@@ -150,29 +147,29 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
 
-            Debug.Log($"Offsettables {universe.manager.OffsettableCount()}");
-            Debug.Log($"Registered Views {universe.manager.CountRegisteredViews()}");
-            Debug.Log($"Views {universe.manager.CountViews()}");
+            Debug.Log($"Offsettables {manager.OffsettableCount()}");
+            Debug.Log($"Registered Views {manager.CountRegisteredViews()}");
+            Debug.Log($"Views {manager.CountViews()}");
 
-            Assert.AreEqual(1, universe.manager.OffsettableCount());
-            Assert.AreEqual(1, universe.manager.CountRegisteredViews());
+            Assert.AreEqual(1, manager.OffsettableCount());
+            Assert.AreEqual(1, manager.CountRegisteredViews());
 
             GameObject.Destroy(view.gameObject);
             GameObject.Destroy(origin.gameObject);
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, universe.manager.OffsettableCount());
-            Assert.AreEqual(0, universe.manager.CountRegisteredViews());
+            Assert.AreEqual(0, manager.OffsettableCount());
+            Assert.AreEqual(0, manager.CountRegisteredViews());
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, universe.manager.CountViews());
+            Assert.AreEqual(0, manager.CountViews());
         }
 
 
@@ -192,7 +189,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForFixedUpdate();
             }
 
-            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
 
             yield return new WaitForSeconds(2);
             Debug.Log("Starting test");
@@ -205,17 +202,17 @@ namespace FloatingOffset.Runtime
                 Debug.Log($"OFFSET: Count {i}");
                 Vector3 delta = new Vector3(val, val, val);
                 view.transform.position += delta;
-                position += UnityFunctions.toVector3d(delta);
+                position += OffsetUtils.ToVector3d(delta);
 
                 if (i < 21 && (val * 2) > 0)
                     val *= 2;
 
-                var error = Vector3d.Distance(position, view.GetRealPosition());
+                var error = Vector3d.Distance(position, OffsetUtils.GetRealPosition(view.transform));
                 // Assert.Less(error, 2);
 
                 int desync_count = 0;
 
-                while (Math.Abs(view.transform.position.x) > universe.MinimumJoinDistance && desync_count < 100)
+                while (Math.Abs(view.transform.position.x) > OFFSET_DISTANCE && desync_count < 100)
                 {
                     yield return new WaitForFixedUpdate();
                     desync_count++;
@@ -225,7 +222,7 @@ namespace FloatingOffset.Runtime
                     Debug.LogWarning($"Rebase not working properly, still desynchronized after {desync_count} frames. Was {view.transform.position.x}");
                 }
 
-                var view_error = Vector3d.Distance(Vector3d.zero, view.GetRealPosition());
+                var view_error = Vector3d.Distance(Vector3d.zero, OffsetUtils.GetRealPosition(view.transform));
                 var origin_offset = Vector3.Distance(Vector3.zero, origin.transform.position);
 
                 sb.Append($"{i};{error * 1000};{origin_offset};{view_error};{val};{desync_count}\n");
@@ -253,7 +250,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = UnityFunctions.toVector3d(view.transform.position);
+            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -265,11 +262,11 @@ namespace FloatingOffset.Runtime
             {
                 Vector3 delta = (i % 2 == 0 ? -1 : 1) * OFFSET_DISTANCE * Vector3.right;
                 view.transform.position += delta;
-                position += UnityFunctions.toVector3d(delta);
+                position += OffsetUtils.ToVector3d(delta);
 
                 int desync_count = 0;
 
-                while (Math.Abs(view.transform.position.x) > universe.MinimumJoinDistance && desync_count < 100)
+                while (Math.Abs(view.transform.position.x) > OFFSET_DISTANCE && desync_count < 100)
                 {
                     yield return new WaitForFixedUpdate();
                     desync_count++;
@@ -281,7 +278,7 @@ namespace FloatingOffset.Runtime
 
                 total_desync_count += desync_count;
 
-                error += Vector3d.Distance(position, view.GetRealPosition());
+                error += Vector3d.Distance(position, OffsetUtils.GetRealPosition(view.transform));
 
 
                 var distanceFromOrigin = Vector3.Distance(view.transform.position, Vector3.zero);
@@ -324,7 +321,7 @@ namespace FloatingOffset.Runtime
             Vector3d[] expectedPositions = new Vector3d[8];
             for (int i = 0; i < 8; i++)
             {
-                expectedPositions[i] = UnityFunctions.toVector3d(views[i].transform.position);
+                expectedPositions[i] = OffsetUtils.ToVector3d(views[i].transform.position);
             }
 
             yield return new WaitForSeconds(2);
@@ -344,14 +341,14 @@ namespace FloatingOffset.Runtime
                 {
                     Vector3 delta = new Vector3(val, val, val);
                     currentView.transform.position += delta;
-                    expectedPositions[viewIndex] += UnityFunctions.toVector3d(delta);
+                    expectedPositions[viewIndex] += OffsetUtils.ToVector3d(delta);
 
                     val *= 2;
 
                     yield return new WaitForEndOfFrame();
                     yield return null;
 
-                    double absolute_error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
+                    double absolute_error = Vector3d.Distance(expectedPositions[viewIndex], OffsetUtils.GetRealPosition(currentView.transform));
                     float local_error = currentView.transform.position.magnitude;
                     while (absolute_error > 2.0 || local_error > 5000)
                     {
@@ -365,13 +362,13 @@ namespace FloatingOffset.Runtime
                         }
 
                         yield return new WaitForEndOfFrame();
-                        absolute_error = Vector3d.Distance(expectedPositions[viewIndex], currentView.GetRealPosition());
+                        absolute_error = Vector3d.Distance(expectedPositions[viewIndex], OffsetUtils.GetRealPosition(currentView.transform));
                         local_error = currentView.transform.position.magnitude;
                         error_frames++;
                     }
                     Assert.Less(absolute_error, 2.0, $"Precision failure on iteration {i}. View {viewIndex} is off by {absolute_error} units.");
                     Assert.Less(local_error, 5000, $"Offset failure on iteration {i}. View {viewIndex} is off-center by {local_error} units.");
-                    Debug.Log($"Iteration {i} passed. View {viewIndex} tracking at {currentView.GetRealPosition()}");
+                    Debug.Log($"Iteration {i} passed. View {viewIndex} tracking at {OffsetUtils.GetRealPosition(currentView.transform)}");
                 }
             }
             Debug.Log($"Test passed with {error_frames} imprecise frames.");
@@ -457,7 +454,7 @@ namespace FloatingOffset.Runtime
                 }
             }
 
-            Debug.Log($"Final real position of staticObject: {staticObject.GetRealPosition()}");
+            Debug.Log($"Final real position of staticObject: {OffsetUtils.GetRealPosition(staticObject.transform)}");
         }
 
         [UnityTest]

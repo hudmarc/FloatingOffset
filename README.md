@@ -5,9 +5,9 @@
 # Quickstart (FishNet)
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
-- Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Examples > FishNet`) to your FishNet `NetworkManager`
+- Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Networking > FishNet > Management`) to the GameObject holding your FishNet `NetworkManager`. This will allow you to also set your configuration.
 - Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
-- Everything is managed through the `OffsetUniverse`, if you want to teleport the player you also call that through the `OffsetUniverse`. Attach it to your scripts like you would any other ScriptableObject. By default one will be created in your root assets folder.
+- Utility functions live on `OffsetUtils`, if you want to teleport the player you also call that through the `OffsetUtils`.
 <img width="451" alt="image" src="https://user-images.githubusercontent.com/44267994/228247674-b075e104-a93a-4a9f-bdbe-5d0b2c8a49ba.png">
 
 Setup tutorial video coming soon.
@@ -27,33 +27,33 @@ This is currently the only open-source Unity package that can do this while main
 
 At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetServer` contains the bulk of the implementation.
 
-### Is this package fast enough for my game? I want to host around 400 players on one world on my server.
+### Is this package fast enough for my game? I want to host my small friend group of 2500 people on one world on my server.
 
 Assuming a 4ms frame budget and a midrange server (in other words, the same cost as the default Unity Physics loop) yes.
 
 ### Benchmarks:
 
-> If all players are in one spot (clustered, absolute worst case)
+> If all players are clustered in one spot
 ```
-MultipleViewsSameClientStressTestWorstCase (2.578s)
+MultipleViewsSameClientStressTestCloseTogether (2.578s)
 ---
-Stopped at 420 players with simulated frametime 4ms.
-Average: 2.02777777777778ms
-Worst: 4.06666666666667ms @ 420 players
-Best: 0.433333333333333ms @ 40 players
+Stopped at 3820 players with simulated frametime 5ms.
+Average: 1.57897033158813ms
+Worst: 5.25ms @ 3820 players
+Best: 0.0333333333333333ms @ 40 players
 ```
 
 > If players are spread out evenly (not clustered, average case)
 ```
 MultipleViewsSameClientStressTestSpreadOut (4.803s)
 ---
-Stopped at 1040 players with simulated frametime 4ms.
-Average: 1.52852564102564ms
-Worst: 4.15ms @ 1040 players
-Best: 0.05ms @ 40 players
+Stopped at 2640 players with simulated frametime 4ms.
+Average: 1.67272727272727ms
+Worst: 4.23333333333333ms @ 2640 players
+Best: 0.0666666666666667ms @ 40 players
 ```
 
-> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach 1000 players on an actual Unity game with this package, please let me know!
+> Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach this many players on an actual Unity game with this package, please let me know!
 
 `Tested on 6-Core Mobile Core i7 (I7-9750H) @ 4.5Ghz Turbo Boost`
 
@@ -65,59 +65,34 @@ Best: 0.05ms @ 40 players
 - To configure the Floating Offset backend, set your preferences to the `OffsetUniverse`. It should be automatically created at the root of your project. If not, you can create your own under  `Assets/Create/Floating Offset/OffsetUniverse`
 - To teleport views to specific real positions, use `universe.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
 
-## Singleplayer Setup
-
-Same as above, but instead of adding an `OffsetManagerNetworking` to the NetworkManager object you just need to set up an empty GameObject marked Do Not Destroy on Load and add the plain `OffsetManager` to it. In my opinion using this package for singleplayer is a bit overkill but it does work just fine! Maybe if you have a lot of AI's in you world that need to be constantly rendered even if they are far away from the player? Either way it works well as a plain floating origin package also.
-
-## Performance considerations
-
-- This package scales generally ~~linearly~~ (currently polynomial worst case, unsure if this is avoidable because we unfortunately need to run nearest neighbor search) with evenly distributed players but if all your players cluster in one place performance can dip. See the benchmarks for more details.
-- The OffsetManager class is still being optimized. If you can reduce the number of root GameObjects in your scenes that should improve peformance.
-
 ---
 
-## OffsetScene
+## Glossary
+
+### OffsetScene
 
 You can think of an offset scene as a normal Unity scene with a particular offset from 0,0,0 represented in 64-bit doubles. The point of this package is to keep all players as close to the centers of their scenes as possible, and it does this using a variety of algorithms and datastructures.
 
 These are implemented in the OffsetServer as collections, you can view the offset of a given scene in the Editor when you have an OffsetTransform or OffsetAnchor selected. If you need to see the offset of a scene in code you can do this with `Vector3d GetSceneOffset(Scene scene)` (currently this is located on OffsetServer but will be moved, update to follow soon)
 
-## OffsetManager
+### OffsetManager
 
-Implements Unity functions on behalf of the OffsetServer.
+Manages the offset server and configuration. See `FishNetOffsetManager` for the core multiplayer version of this class.
 
-Bootstraps the OffsetServer.
+### OffsetServer (C# class)
 
-Default update mode is Unity, can also be Custom. There is also an OffsetManagerFishNet that overrides the setup and updates subscribed to the FishNet OnTick and also handles network synchronisation for clients (default is first View spawned by the client is considered the local player, but methods are provided to change the View registered for any given player)
+Implements the low level neighborhood clustering of this package. The core logic of this package could in the future be ported to Godot or another C# engine, and in the meantime this class is very testable.
 
-See also `OffsetManagerNetworking`
+The Offset Server manages the pooling of Offset Scenes and the transfer of Offset Transforms between all active Offset Scenes as well as keeping the scenes properly rebased. The Offset Server is not actually a Monobehaviour so it is instantiated by the OffsetManager as a plain C# object and its instance lives on the OffsetUniverse.
 
-## OffsetManagerNetworking
+### OffsetView
 
-Same as the OffsetManager but it uses the update loop from FishNet instead of the internal Unity update loops.
-
-## OffsetServer (C# class)
-
-Implements the low level logic of this package. The core logic of this package could in the future be ported to Godot or another C# engine, and in the meantime this class is very testable.
-
-The Offset Server essentially manages the pooling of Offset Scenes and the transfer of Offset Transforms between all active Offset Scenes as well as keeping the scenes properly rebased. The Offset Server is not actually a Monobehaviour so it is instantiated by the OffsetManager as a plain C# object and its instance lives on the OffsetUniverse.
-
-## OffsetTransform
-
-Will exist in the `OffsetScene` nearest its origin. If it is not near any OffsetScenes it will be destroyed. If you do not want an OffsetTransform to be destroyed (for example, a player or a super-important boss character in your game) you should mark `isView = true`. More details below.
-
-### OffsetTransform.isView = true
-
-Attach an `OffsetTransform` with `isView = true` to your player. The first player spawned on the server will be considered the local player. The first player spawned on clients that is owned by that client is considered the local player on clients and is used for determining when to send rebase commands to clients from the server.
-
-The `OffsetScene` will be rebased to the centroid of all game objects with `OffsetTransform` and `isView = true` in the scene.
-
-Tracks the real position (relative to real zero) and the real velocity (in absolute space, relative to real zero velocity) of itself.
+Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
 
 ### OffsetAnchor
 
 Offset Anchors ensure that the object they are attached to are always at the exact position specified in the OffsetAnchor's target position. Great for things like cities or other POI's that need to exist at specific points in space. If you didn't use this you would notice that cities that exist very very far from the origin are not where you put them (for example, clipping into the terrain) because their native Unity position (which is a Vector3) is not precise enough to store their exact location.
 
-## IgnoreOffset
+### IgnoreOffset
 
 Marks an object as ignored by the Offset system, when a scene is rebased this object will not be moved. Great for terrains that need to stay near the origin and use some custom system to render themselves. (for exmaple, offsetting the terrain by the scene offset, I'll port an example as soon as I can)

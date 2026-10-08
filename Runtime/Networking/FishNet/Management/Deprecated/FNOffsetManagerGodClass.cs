@@ -190,9 +190,9 @@ namespace FloatingOffset.Runtime.Example
             }
         }
 
-        public int CountRegisteredViews() => server.RegisteredViewCount();
+        public override int CountRegisteredViews() => server.RegisteredViewCount();
 
-        public int CountViews() => server.ActualViewCount();
+        public override int CountViews() => server.ActualViewCount();
 
         public override Vector3d GetLocalOffset(Scene scene)
         {
@@ -207,7 +207,7 @@ namespace FloatingOffset.Runtime.Example
 
         public override void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettables.Remove(offsettable);
 
-        public int OffsettableCount() => offsettables.Count;
+        public override int OffsettableCount() => offsettables.Count;
 
         public bool GetOffsettablesInScene(Scene scene, out ReadOnlyCollection<IOffsettable<Scene>> found)
         {
@@ -582,7 +582,6 @@ namespace FloatingOffset.Runtime.Example
         }
 
         public override bool IsLogging() => configuration.logging;
-
 
         #endregion
     }

@@ -53,33 +53,6 @@ namespace FloatingOffset.Editor.Tests
             onSceneReady?.Invoke(newScene);
         }
 
-        public void TransferTo(IOffsetObject<int> offsettable, int from, int to, bool reposition = false)
-        {
-            if (reposition)
-            {
-                Vector3d oldOrigin = SceneOffsets.ContainsKey(from) ? SceneOffsets[from] : Vector3d.zero;
-                Vector3d trueGlobalPos = oldOrigin + offsettable.GetEnginePosition();
-
-                Vector3d newOrigin = SceneOffsets.ContainsKey(to) ? SceneOffsets[to] : Vector3d.zero;
-                offsettable.SetEnginePosition(trueGlobalPos - newOrigin);
-            }
-
-            // Remove from old scene container
-            if (SceneRootObjects.ContainsKey(from))
-            {
-                SceneRootObjects[from].Remove(offsettable);
-            }
-
-            // Add to new scene container
-            if (!SceneRootObjects.ContainsKey(to))
-            {
-                SceneRootObjects[to] = new HashSet<IOffsetObject<int>>();
-            }
-            SceneRootObjects[to].Add(offsettable);
-
-            (offsettable as MockOffsetObject).SetSceneKey(to);
-        }
-
         public void UpdateOffset(OffsetScene<int> scene)
         {
             Vector3d oldOrigin = SceneOffsets.ContainsKey(scene.key) ? SceneOffsets[scene.key] : Vector3d.zero;
@@ -108,6 +81,32 @@ namespace FloatingOffset.Editor.Tests
         {
             main = view;
         }
+
+        public void TransferTo(IOffsetObject<int> offsettable, int from, int to)
+        {
+
+            Vector3d oldOrigin = SceneOffsets.ContainsKey(from) ? SceneOffsets[from] : Vector3d.zero;
+            Vector3d trueGlobalPos = oldOrigin + offsettable.GetEnginePosition();
+
+            Vector3d newOrigin = SceneOffsets.ContainsKey(to) ? SceneOffsets[to] : Vector3d.zero;
+            offsettable.SetEnginePosition(trueGlobalPos - newOrigin);
+
+
+            // Remove from old scene container
+            if (SceneRootObjects.ContainsKey(from))
+            {
+                SceneRootObjects[from].Remove(offsettable);
+            }
+
+            // Add to new scene container
+            if (!SceneRootObjects.ContainsKey(to))
+            {
+                SceneRootObjects[to] = new HashSet<IOffsetObject<int>>();
+            }
+            SceneRootObjects[to].Add(offsettable);
+
+            (offsettable as MockOffsetObject).SetSceneKey(to);
+        }
     }
 
     public class MockOffsetObject : IOffsetObject<int>
@@ -124,8 +123,8 @@ namespace FloatingOffset.Editor.Tests
             _enginePosition = Vector3.zero;
         }
 
-        public Vector3d GetEnginePosition() => UnityFunctions.toVector3d(_enginePosition);
-        public void SetEnginePosition(Vector3d position) => _enginePosition = UnityFunctions.toVector3(position);
+        public Vector3d GetEnginePosition() => OffsetUtils.ToVector3d(_enginePosition);
+        public void SetEnginePosition(Vector3d position) => _enginePosition = OffsetUtils.ToVector3(position);
 
         public int GetSceneKey() => _sceneKey;
         public void SetSceneKey(int key) => _sceneKey = key;
@@ -143,6 +142,24 @@ namespace FloatingOffset.Editor.Tests
 
         public void SceneTransfer()
         {
+        }
+
+        public void OnPreSceneTransfer()
+        {
+        }
+
+        public void OnSceneTransfer()
+        {
+        }
+
+        public bool IsPlayer()
+        {
+            return true;
+        }
+
+        public string GetName()
+        {
+            return "Test";
         }
     }
 

@@ -32,5 +32,9 @@ namespace FloatingOffset.Runtime
         public abstract void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene);
         public abstract void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene);
         public abstract bool HasScene(Scene scene);
+
+        public abstract int OffsettableCount();
+        public abstract int CountRegisteredViews();
+        public abstract int CountViews();
     }
 }
