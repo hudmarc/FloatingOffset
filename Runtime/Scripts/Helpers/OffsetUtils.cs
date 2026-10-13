@@ -43,8 +43,8 @@ namespace FloatingOffset.Runtime
         }
         public static PhysicsScene Physics(this GameObject gameObject) => gameObject.scene.GetPhysicsScene();
 
-        public static Vector3d ToVector3d(Vector3 vector) => new Vector3d(vector.x, vector.y, vector.z);
-        public static Vector3 ToVector3(Vector3d vector) => new Vector3((float)vector.x, (float)vector.y, (float)vector.z);
+        public static Vector3d ToVector3d(this Vector3 vector) => new Vector3d(vector.x, vector.y, vector.z);
+        public static Vector3 ToVector3(this Vector3d vector) => new Vector3((float)vector.x, (float)vector.y, (float)vector.z);
 
         // Custom extension methods for the Floating Offset package. Full test coverage under "Functional".
 

@@ -11,27 +11,20 @@ namespace FloatingOffset.Runtime
         public static string ToHex(this int integer) => integer.ToString(HEX);
 
         /// <summary>
-        /// Next power of 2 using bit twiddling
+        /// Next power of 2, from https://stackoverflow.com/questions/31997707/rounding-value-to-nearest-power-of-two
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="x">The number whose next power of 2 we want to find</param>
         /// <returns></returns>
-        public static int GetNextPowerOfTwo(int n)
+        public static int GetNextPowerOfTwo(int x)
         {
-            // Handle edge cases (0 or negative numbers)
-            if (n <= 0) return 1;
-
-            // Step 1: Subtract 1
-            n--;
-
-            // Step 2: "Smear" the highest set bit downwards
-            n |= n >> 1;
-            n |= n >> 2;
-            n |= n >> 4;
-            n |= n >> 8;
-            n |= n >> 16;
-
-            // Step 3: Add 1 to get the actual power of two
-            return n + 1;
+            if (x < 0) { return 0; }
+            --x;
+            x |= x >> 1;
+            x |= x >> 2;
+            x |= x >> 4;
+            x |= x >> 8;
+            x |= x >> 16;
+            return x + 1;
         }
     }
 }

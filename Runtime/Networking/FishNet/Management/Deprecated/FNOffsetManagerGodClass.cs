@@ -296,7 +296,7 @@ namespace FloatingOffset.Runtime.Example
         protected void SetSceneVisibility(Scene scene, bool visible)
         {
             if (configuration.logging)
-                Debug.Log($"Changed visibility on {scene.handle.ToHex()} to {visible}");
+                Debug.Log($"Changed visibility on {scene.HandleToHex()} to {visible}");
 
             var rootobjectsInScene = scene.GetRootGameObjects();
             for (int i = 0; i < rootobjectsInScene.Length; i++)
@@ -319,7 +319,7 @@ namespace FloatingOffset.Runtime.Example
         {
             foreach (Scene scene in loadedScenes)
             {
-                Debug.Log($"Loaded scene {scene.GetHashCode().ToHex()}");
+                Debug.Log($"Loaded scene {scene.HandleToHex()}");
                 if (readyActions.Count > 0)
                     readyActions.Dequeue()(scene);
             }
@@ -331,7 +331,7 @@ namespace FloatingOffset.Runtime.Example
         {
             foreach (var scene in data.LoadedScenes)
             {
-                Debug.Log($"Scene loaded (FishNet) {scene.handle.GetHashCode()}");
+                Debug.Log($"Scene loaded (FishNet) {scene.HandleToHex()}");
             }
 
             OnLoadEnd(data.LoadedScenes);
@@ -356,7 +356,7 @@ namespace FloatingOffset.Runtime.Example
                 return;
 
             if (configuration.logging)
-                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.handle.ToHex()}]\n{GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.HandleToHex()}]\n{GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
             Vector3d old_offset = GetOffset(key);
             SetOffset(key, scene.offset);
 
@@ -424,7 +424,7 @@ namespace FloatingOffset.Runtime.Example
             }
 
             if (configuration.logging)
-                Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} {GetOffset(from)} to {to.handle.ToHex()} {GetOffset(to)} ");
+                Debug.Log($"Transferred {offsetMono.name} from {from.HandleToHex()} {GetOffset(from)} to {to.HandleToHex()} {GetOffset(to)} ");
 
             if (offsetMono.TryGetComponent(out NetworkObject nob))
             {
@@ -475,7 +475,7 @@ namespace FloatingOffset.Runtime.Example
             if (last_scene == scene)
             {
                 if (configuration.logging)
-                    Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.handle.ToHex()}");
+                    Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.HandleToHex()}");
                 return;
             }
             last_scene = scene;

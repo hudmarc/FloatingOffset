@@ -77,7 +77,7 @@ namespace FloatingOffset.Runtime.Example
         protected void SetSceneVisibility(Scene scene, bool visible)
         {
             if (logging)
-                Debug.Log($"Changed visibility on {scene.handle.ToHex()} to {visible}");
+                Debug.Log($"Changed visibility on {scene.HandleToHex()} to {visible}");
 
             var rootobjectsInScene = scene.GetRootGameObjects();
             for (int i = 0; i < rootobjectsInScene.Length; i++)
@@ -106,7 +106,7 @@ namespace FloatingOffset.Runtime.Example
             foreach (Scene scene in loadedScenes)
             {
                 if (logging)
-                    Debug.Log($"Loaded scene {scene.GetHashCode().ToHex()}");
+                    Debug.Log($"Loaded scene {scene.HandleToHex()}");
                 if (readyActions.Count > 0)
                 {
                     readyActions.Dequeue()(scene);
@@ -145,7 +145,7 @@ namespace FloatingOffset.Runtime.Example
                 return;
 
             if (logging)
-                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.handle.ToHex()}]\n{sceneState.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+                Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.HandleToHex()}]\n{sceneState.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
             Vector3d old_offset = sceneState.GetOffset(key);
             sceneState.SetOffset(key, scene.offset);
 
@@ -236,7 +236,7 @@ namespace FloatingOffset.Runtime.Example
             offsetObject.OnSceneTransfer();
 
             if (logging)
-                Debug.Log($"Transferred {offsetMono.name} from {from.handle.ToHex()} {sceneState.GetOffset(from)} to {to.handle.ToHex()} {sceneState.GetOffset(to)} ");
+                Debug.Log($"Transferred {offsetMono.name} from {from.HandleToHex()} {sceneState.GetOffset(from)} to {to.HandleToHex()} {sceneState.GetOffset(to)} ");
 
             
 
@@ -272,7 +272,7 @@ namespace FloatingOffset.Runtime.Example
             if (last_scene == scene)
             {
                 if (logging)
-                    Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.handle.ToHex()}");
+                    Debug.LogWarning($"Prevented double execution of completed callback by SceneManager LoadSceneAsync on scene {scene.HandleToHex()}");
                 return;
             }
             last_scene = scene;
