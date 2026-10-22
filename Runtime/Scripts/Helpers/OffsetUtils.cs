@@ -41,9 +41,23 @@ namespace FloatingOffset.Runtime
 
             return UnityToReal(trf.position, OffsetBehaviour.manager.GetLocalOffset(scene));
         }
+        /// <summary>
+        /// Shorthand for <code>gameObject.scene.GetPhysicsScene()</code>
+        /// </summary>
+        /// <param name="gameObject"></param>
+        /// <returns></returns>
         public static PhysicsScene Physics(this GameObject gameObject) => gameObject.scene.GetPhysicsScene();
-
+        /// <summary>
+        /// Converts the given Vector3 to a Vector3d
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <returns></returns>
         public static Vector3d ToVector3d(this Vector3 vector) => new Vector3d(vector.x, vector.y, vector.z);
+        /// <summary>
+        /// Converts the given Vector3d to a Vector3
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <returns></returns>
         public static Vector3 ToVector3(this Vector3d vector) => new Vector3((float)vector.x, (float)vector.y, (float)vector.z);
 
         // Custom extension methods for the Floating Offset package. Full test coverage under "Functional".
@@ -62,5 +76,11 @@ namespace FloatingOffset.Runtime
         /// <param name="offset">The offset of the scene.</param>
         /// <returns></returns>
         public static Vector3d UnityToReal(Vector3 unityPosition, Vector3d offset) => ToVector3d(unityPosition) + offset;
+        /// <summary>
+        /// Gets the nearest scene to the given position in real space.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public static Scene GetNearestScene(Vector3d position)=>OffsetBehaviour.manager.GetNearbyScene(position);
     }
 }

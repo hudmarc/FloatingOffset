@@ -124,7 +124,7 @@ namespace FloatingOffset.Runtime
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, manager.CountViews());
+            Assert.AreEqual(0, manager.CountActualViews());
 
         }
         /// <summary>
@@ -154,7 +154,7 @@ namespace FloatingOffset.Runtime
 
             Debug.Log($"Offsettables {manager.OffsettableCount()}");
             Debug.Log($"Registered Views {manager.CountRegisteredViews()}");
-            Debug.Log($"Views {manager.CountViews()}");
+            Debug.Log($"Views {manager.CountActualViews()}");
 
             Assert.AreEqual(1, manager.OffsettableCount());
             Assert.AreEqual(1, manager.CountRegisteredViews());
@@ -169,7 +169,7 @@ namespace FloatingOffset.Runtime
 
             yield return null; //one frame
 
-            Assert.AreEqual(0, manager.CountViews());
+            Assert.AreEqual(0, manager.CountActualViews());
         }
 
 

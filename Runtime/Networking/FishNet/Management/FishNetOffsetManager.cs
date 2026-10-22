@@ -190,7 +190,13 @@ namespace FloatingOffset.Runtime.Example
             OnInitialOffset?.Invoke();
         }
 
-        public override void TeleportTo(OffsetView view, Vector3d position) => server.TeleportTo(view, position);
+        public override void TeleportTo(OffsetView view, Vector3d position)
+        {
+            if (!server.HasScene(view.gameObject.scene))
+                Debug.LogWarning("The view being teleported is not in a known OffsetScene. It will be teleported as though from (0,0,0).");
+            server.TeleportTo(view, position);
+        }
+
         public override Vector3d GetLocalOffset(Scene scene) => server == null ? localOffsetState.current_offset : offsetSceneState.GetOffset(scene);
         public override void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettableRegistry.RegisterOffsettable(offsettable, scene);
         public override void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettableRegistry.UnregisterOffsettable(offsettable, scene);
@@ -209,6 +215,8 @@ namespace FloatingOffset.Runtime.Example
         public override bool IsLogging() => configuration.logging;
         public override int OffsettableCount() => offsettableRegistry.Count;
         public override int CountRegisteredViews() => offsetViewRegistry.CountRegisteredViews();
-        public override int CountViews() => offsetViewRegistry.CountViews();
+        public override int CountActualViews() => offsetViewRegistry.CountViews();
+
+        public override Scene GetNearbyScene(Vector3d position) => server.GetNearbyScene(position);
     }
 }

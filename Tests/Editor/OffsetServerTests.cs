@@ -433,5 +433,103 @@ namespace FloatingOffset.Editor.Tests
                 }
             }
         }
+
+        [Test]
+        public void GetNearbySceneTest_InitialState()
+        {
+            var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
+            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+
+            server.Process();
+
+            int invalid = server.GetNearbyScene(Vector3d.zero);
+
+            Assert.AreEqual(0, invalid, "Initial scene is expected to be default (0) if no views are yet registered.");
+
+            var view = new MockOffsetObject(INITIAL_SCENE_KEY);
+            server.RegisterView(view);
+            mock_handler.Add(view);
+
+            server.Process(); // Call Process once to build hash grids
+
+            // Edge Case: Querying when only the initial scene exists at zero position.
+            int nearest = server.GetNearbyScene(Vector3d.zero);
+
+            Assert.AreEqual(INITIAL_SCENE_KEY, nearest, "Initial scene should be the nearest scene to origin.");
+        }
+
+        [Test]
+        public void GetNearbySceneTest_MultipleSplitScenes()
+        {
+            var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
+            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+
+            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
+            var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
+
+            server.RegisterView(viewA);
+            server.RegisterView(viewB);
+            mock_handler.Add(viewA);
+            mock_handler.Add(viewB);
+
+            server.Process(); // Call Process once to build hash grids
+
+            // Move viewA far away to trigger a split into a new scene
+            viewA.SetEnginePosition(new Vector3d(100000, 0, 0));
+            for (int i = 0; i < 5; i++)
+            {
+                server.Process();
+            }
+
+            int sceneA = viewA.GetSceneKey();
+            int sceneB = viewB.GetSceneKey();
+            Assert.AreNotEqual(sceneA, sceneB, "Views failed to separate into distinct scenes.");
+
+            // Edge Case: Querying a position adjacent to View A's real-space coordinate
+            Vector3d realPosA = mock_handler.RealPosition(viewA);
+            int nearestToA = server.GetNearbyScene(realPosA);
+            Assert.AreEqual(sceneA, nearestToA, "GetNearestScene should resolve to sceneA when queried near viewA.");
+
+            // Edge Case: Querying a position adjacent to View B's real-space coordinate
+            Vector3d realPosB = mock_handler.RealPosition(viewB);
+            int nearestToB = server.GetNearbyScene(realPosB);
+            Assert.AreEqual(sceneB, nearestToB, "GetNearestScene should resolve to sceneB when queried near viewB.");
+        }
+
+        [Test]
+        public void GetNearbySceneTest_MidpointBetweenScenes()
+        {
+            var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
+            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+
+            var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
+            var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
+
+            server.RegisterView(viewA);
+            server.RegisterView(viewB);
+            mock_handler.Add(viewA);
+            mock_handler.Add(viewB);
+            server.Process();
+
+            // Separate scenes along the X axis
+            viewA.SetEnginePosition(new Vector3d(20000, 0, 0));
+            for (int i = 0; i < 5; i++)
+            {
+                server.Process();
+            }
+
+            int sceneA = viewA.GetSceneKey();
+            int sceneB = viewB.GetSceneKey();
+
+            Vector3d realPosA = mock_handler.RealPosition(viewA);
+            Vector3d realPosB = mock_handler.RealPosition(viewB);
+
+            // Edge Case: Querying the exact real-space midpoint between two active scenes
+            Vector3d midpoint = (realPosA + realPosB) * 0.5;
+            int nearestAtMidpoint = server.GetNearbyScene(midpoint);
+
+            Assert.AreNotEqual(sceneA, nearestAtMidpoint, "Midpoint query must not resolve to scene A");
+            Assert.AreNotEqual(sceneB, nearestAtMidpoint, "Midpoint query must not resolve to scene B");
+        }
     }
 }

@@ -331,8 +331,12 @@ namespace FloatingOffset.Runtime
         /// <param name="j">Scene 2</param>
         /// <returns></returns>
         public bool SameLayer(int i, int j) => scenes[i].layer == scenes[j].layer;
-
-        public int IndexOf(TSceneKey sceneKey)
+        /// <summary>
+        /// O(1) Dictionary lookup
+        /// </summary>
+        /// <param name="sceneKey"></param>
+        /// <returns></returns>
+        public int GetIndexOf(TSceneKey sceneKey)
         {
             return scene_indexes[sceneKey];
         }

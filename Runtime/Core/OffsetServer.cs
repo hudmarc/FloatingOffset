@@ -19,7 +19,7 @@ namespace FloatingOffset.Runtime
         private HashSet<IOffsetObject<TSceneKey>> views_to_remove = new HashSet<IOffsetObject<TSceneKey>>();
 
         /// <summary>
-        /// Tracks all OffsetScenes in one fast array.
+        /// Tracks all OffsetScenes in one array.
         /// </summary>
         private OffsetSceneCollection<TSceneKey> scenes = new OffsetSceneCollection<TSceneKey>();
 
@@ -203,7 +203,7 @@ namespace FloatingOffset.Runtime
             for (int i = 0; i < view_count; i++)
             {
                 IOffsetObject<TSceneKey> view = views[i];
-                view_scene_indexes[i] = scenes.IndexOf(view.GetSceneKey());
+                view_scene_indexes[i] = scenes.GetIndexOf(view.GetSceneKey());
 
                 Vector3d position = GetSceneOffset(scenes.GetSceneKeyAt(view_scene_indexes[i])) + view.GetEnginePosition();
                 view_positions[i] = position;
@@ -226,19 +226,19 @@ namespace FloatingOffset.Runtime
             }
 
 
-            MarkTime(4);
+            MarkTime(4); // add views to hash grid: 0.986233ms avg (close) add views to hash grid: 0.753065ms avg (spread)
 
             // Populate union-find using hash grid
 
             for (int i = 0; i < view_count; i++)
             {
                 int representative = this.grid.FindRepresentative(view_positions[i]);
-                if (representative != i)
+                if (representative != -1 && representative != i)
                 {
                     union.Union(representative, i);
                 }
             }
-            MarkTime(5);
+            MarkTime(5); //populate union-find: 1.0777933ms avg (close) 0.62602167ms avg (spread)
 
             // calculate union sums
 
@@ -405,7 +405,7 @@ namespace FloatingOffset.Runtime
                     {
                         scenes.Register(scene);
 
-                        int index = scenes.IndexOf(scene);
+                        int index = scenes.GetIndexOf(scene);
 
                         OffsetScene<TSceneKey> empty_scene = scenes.OffsetAt(index, offset);
                         handler.UpdateOffset(empty_scene);
@@ -434,7 +434,7 @@ namespace FloatingOffset.Runtime
         {
             TSceneKey origin = offsetObject.GetSceneKey();
 
-            Vector3d origin_offset = scenes.GetOffset(origin);
+            Vector3d origin_offset = scenes.HasScene(origin) ? scenes.GetOffset(origin) : Vector3d.zero; //teleports from zero-offset if teleporting from an unknown scene
 
             bool request = RequestScene(source, real_position, out int found, target =>
                 {
@@ -453,7 +453,20 @@ namespace FloatingOffset.Runtime
                 handler.UpdateOffset(scenes.GetSceneAt(found));
             }
         }
-
+        /// <summary>
+        /// Gets a scene near to the given position, based off the position of the scene's representative. If nothing was found, returns <code>TSceneKey.default</code>.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public TSceneKey GetNearbyScene(Vector3d position)
+        {
+            int representative = grid.FindRepresentative(position);
+            if (representative != -1)
+            {
+                return views[representative].GetSceneKey();
+            }
+            return default;
+        } 
         private struct ScenedUnion : IComparable<ScenedUnion>
         {
             public int scene_index;

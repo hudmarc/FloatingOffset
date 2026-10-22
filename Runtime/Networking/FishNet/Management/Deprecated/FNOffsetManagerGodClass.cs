@@ -192,7 +192,7 @@ namespace FloatingOffset.Runtime.Example
 
         public override int CountRegisteredViews() => server.RegisteredViewCount();
 
-        public override int CountViews() => server.ActualViewCount();
+        public override int CountActualViews() => server.ActualViewCount();
 
         public override Vector3d GetLocalOffset(Scene scene)
         {
@@ -582,6 +582,9 @@ namespace FloatingOffset.Runtime.Example
         }
 
         public override bool IsLogging() => configuration.logging;
+
+        public override Scene GetNearbyScene(Vector3d position) => server.GetNearbyScene(position);
+
 
         #endregion
     }
