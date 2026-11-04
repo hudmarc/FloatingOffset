@@ -1,12 +1,16 @@
+<img width="3584" height="500" src="https://github.com/user-attachments/assets/5b87aa95-7771-4d15-b542-e2f2de8e8794" />
+
 <img width="104" height="20" alt="build - passing" src="https://github.com/user-attachments/assets/1f0801be-dd19-4172-a41b-35589ee96643" />
 <img width="96" height="20" alt="badge_shieldsio_linecoverage_yellow" src="https://github.com/user-attachments/assets/ba324f0a-8554-4a58-884a-8d983a2bd803" />
+
+
 
 
 # Quickstart (FishNet)
 - [Install FishNet](https://assetstore.unity.com/packages/tools/network/fishnet-networking-evolved-207815)
 - Click "Add package from git URL..." in the Unity Package Manager (UPM) and paste in [https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git](https://github.com/hudmarc/FFO-FishNet-Floating-Origin.git)
 - Add a `FishNetOffsetManager`  (located at `Packages > Floating Offset for Unity > Runtime > Networking > FishNet > Management`) to the GameObject holding your FishNet `NetworkManager`. This will allow you to also set your configuration.
-- Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player)
+- Add an `OffsetView` to all your players and any GameObjects you spawn in with a `NetworkTransform` that need to move long distances (for example, AIs that can chase the player, or rigidbodies that can only exist in one scene at a time)
 - Utility functions live on `OffsetUtils`, if you want to teleport the player you also call that through the `OffsetUtils`. (note that Teleport in particular is only callable on the network server!)
 <img width="451" alt="image" src="https://user-images.githubusercontent.com/44267994/228247674-b075e104-a93a-4a9f-bdbe-5d0b2c8a49ba.png">
 
@@ -65,7 +69,7 @@ Best: 0.05ms @ 40 players
 - To configure the Floating Offset backend, set your preferences to the `OffsetUniverse`. It should be automatically created at the root of your project. If not, you can create your own under  `Assets/Create/Floating Offset/OffsetUniverse`
 - To teleport views to specific real positions, use `universe.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
 
----
+
 
 ## Glossary
 
@@ -96,46 +100,3 @@ Offset Anchors ensure that the object they are attached to are always at the exa
 ### IgnoreOffset
 
 Marks an object as ignored by the Offset system, when a scene is rebased this object will not be moved. Great for terrains that need to stay near the origin and use some custom system to render themselves. (for exmaple, offsetting the terrain by the scene offset, I'll port an example as soon as I can)
-
-
-MultipleViewsSameClientStressTestCloseTogether (27.396s)
----
-Stopped at 4800 players with simulated frametime 4ms.
-Average: 1.89145833333333ms
-Worst: 4.38333333333333ms @ 4800 players
-Best: 0.0666666666666667ms @ 80 players
---- DETAILED PROFILE ---
-clear grid & union: 0.0142983333333333ms avg
-prune views: 0.0580133333333333ms avg
-prune unused empty scenes: 0.00315666666666667ms avg
-populate caches: 0.762985ms avg
-add views to hash grid: 0.802986666666667ms avg
-populate union-find: 0.964878333333333ms avg
-aggregate data for each union: 0.142946666666667ms avg
-select best union champ: 0.148783333333333ms avg
-map champs to winner dict: 0.07922ms avg
-offset scenes past threshhold: 0.00164166666666667ms avg
-request scenes/transfers: 0.00800833333333333ms avg
-finalize offset updates: 0.287103333333333ms avg
-
-
-
-MultipleViewsSameClientStressTestSpreadOut (17.476s)
----
-Stopped at 3060 players with simulated frametime 4ms.
-Average: 1.8942265795207ms
-Worst: 4.03333333333333ms @ 3060 players
-Best: 0.05ms @ 40 players
---- DETAILED PROFILE ---
-clear grid & union: 0.0336516666666667ms avg
-prune views: 0.030235ms avg
-prune unused empty scenes: 0.000933333333333333ms avg
-populate caches: 0.445498333333333ms avg
-add views to hash grid: 0.509623333333333ms avg
-populate union-find: 0.537755ms avg
-aggregate data for each union: 0.060535ms avg
-select best union champ: 0.07166ms avg
-map champs to winner dict: 0.0460766666666667ms avg
-offset scenes past threshhold: 0.138133333333333ms avg
-request scenes/transfers: 0.320983333333333ms avg
-finalize offset updates: 0.417593333333333ms avg
