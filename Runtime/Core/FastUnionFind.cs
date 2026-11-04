@@ -14,7 +14,7 @@ namespace FloatingOffset.Runtime
         }
         public FastUnionFind(int initialCapacity)
         {
-            unions = new int[0];
+            unions = new int[1];
             EnsureCapacity(initialCapacity);
         }
 
@@ -22,8 +22,13 @@ namespace FloatingOffset.Runtime
         {
             if (unions.Length < count)
             {
+                int length = unions.Length;
+                while (length < count)
+                {
+                    length *= 2;
+                }
                 int oldLength = unions.Length;
-                int newSize = count * 2;
+                int newSize = length;
                 Array.Resize(ref unions, newSize);
 
                 for (int i = oldLength; i < newSize; i++)
@@ -31,12 +36,6 @@ namespace FloatingOffset.Runtime
                     unions[i] = i;
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Set(int member_index)
-        {
-            unions[member_index] = Find(member_index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,8 +65,8 @@ namespace FloatingOffset.Runtime
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Union(int i, int j)
         {
-            int rootI = Find(i);
-            int rootJ = Find(j);
+            int rootI = Find(i); // O(n)
+            int rootJ = Find(j); // O(n)
             if (rootI != rootJ)
             {
                 unions[rootJ] = rootI; // Attach J's tree to I

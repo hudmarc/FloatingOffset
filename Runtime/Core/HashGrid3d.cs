@@ -11,12 +11,9 @@ namespace FloatingOffset.Runtime
         struct Neighbourhood
         {
             public int representative_value;
-            public float largest_relative_radius_squared;
+            public float largest_relative_radius;
             public Vector3d representative_position;
         }
-        private const uint PrimeX = 73856093;
-        private const uint PrimeY = 19349663;
-        private const uint PrimeZ = 83492791;
         private double resolution_inverse;
         private int max_neighbourhood_radius_squared;
         private int max_neighbourhood_radius;
@@ -38,45 +35,23 @@ namespace FloatingOffset.Runtime
             this.max_neighbourhood_radius = max_neighbourhood_radius;
         }
         public static readonly Vector3d[] SEARCH_PATTERN = {
-                new Vector3d(0,0,0),
-                new Vector3d(0,0,1),
-                new Vector3d(1,0,1),
+        // Distance 0 (1 cell)
+        new Vector3d(0,0,0),
 
-                new Vector3d(1,0,0),
-                new Vector3d(1,0,-1),
-                new Vector3d(0,0,-1),
+        // Distance 1 (6 face-neighbors)
+        new Vector3d(0,0,1),  new Vector3d(0,0,-1),
+        new Vector3d(0,1,0),  new Vector3d(0,-1,0),
+        new Vector3d(1,0,0),  new Vector3d(-1,0,0),
 
-                new Vector3d(-1,0,-1),
-                new Vector3d(-1,0,0),
-                new Vector3d(-1,0,1),
+        // Distance 1.414 / Sqrt(2) (12 edge-neighbors)
+        new Vector3d(0,1,1),  new Vector3d(0,1,-1),  new Vector3d(0,-1,1),  new Vector3d(0,-1,-1),
+        new Vector3d(1,0,1),  new Vector3d(1,0,-1),  new Vector3d(-1,0,1),  new Vector3d(-1,0,-1),
+        new Vector3d(1,1,0),  new Vector3d(1,1,-1),  new Vector3d(-1,1,0),  new Vector3d(-1,1,-1),
 
-
-                new Vector3d(-1,1,1),
-                new Vector3d(0,1,1),
-                new Vector3d(1,1,1),
-
-                new Vector3d(1,1,0),
-                new Vector3d(1,1,-1),
-                new Vector3d(0,1,-1),
-
-                new Vector3d(-1,1,-1),
-                new Vector3d(-1,1,0),
-                new Vector3d(0,1,0),
-
-
-                new Vector3d(0,-1,0),
-                new Vector3d(0,-1,1),
-                new Vector3d(1,-1,1),
-
-                new Vector3d(1,-1,0),
-                new Vector3d(1,-1,-1),
-                new Vector3d(0,-1,-1),
-
-                new Vector3d(-1,-1,-1),
-                new Vector3d(-1,-1,0),
-                new Vector3d(-1,-1,1),
-
-             };
+        // Distance 1.732 / Sqrt(3) (8 corner-neighbors)
+        new Vector3d(1,1,1),   new Vector3d(1,1,-1),   new Vector3d(1,-1,1),   new Vector3d(1,-1,-1),
+        new Vector3d(-1,1,1),  new Vector3d(-1,1,-1),  new Vector3d(-1,-1,1),  new Vector3d(-1,-1,-1),
+    };
 
         /// <summary>
         /// Get the count of unique grid squares with representatives.
@@ -84,7 +59,7 @@ namespace FloatingOffset.Runtime
         public int Count { get => dict.Count; }
         /// <summary>
         /// Add the given value at the given vector as a representative. <code>O(1)</code>
-        /// Returns <code>true</code> if the value would be added to an existing representative, updating its radius. Returns <code>false</code> otherwise.
+        /// Returns the representative found (will be self if none was found)
         /// </summary>
         /// <param name="vector"></param>
         /// <param name="value"></param>
@@ -98,12 +73,12 @@ namespace FloatingOffset.Runtime
                 if (squared_distance > max_neighbourhood_radius_squared)
                     return value;
 
-                if (squared_distance > found.largest_relative_radius_squared)
+                if (squared_distance > found.largest_relative_radius * found.largest_relative_radius)
                 {
                     Neighbourhood mutated = new Neighbourhood()
                     {
                         representative_value = found.representative_value,
-                        largest_relative_radius_squared = squared_distance,
+                        largest_relative_radius = MathF.Sqrt(squared_distance),
                         representative_position = found.representative_position
                     };
                     dict[key] = mutated;
@@ -114,7 +89,7 @@ namespace FloatingOffset.Runtime
             Neighbourhood neighbourhood = new Neighbourhood()
             {
                 representative_value = value,
-                largest_relative_radius_squared = 0,
+                largest_relative_radius = 0,
                 representative_position = vector
             };
             dict.Add(key, neighbourhood);
@@ -143,9 +118,9 @@ namespace FloatingOffset.Runtime
             {
                 if (dict.TryGetValue(key + SEARCH_PATTERN[i], out Neighbourhood neighbourhood))
                 {
-                    float c = 2 * search_radius * MathF.Sqrt(neighbourhood.largest_relative_radius_squared);
+                    float c = 2 * search_radius * neighbourhood.largest_relative_radius;
 
-                    if (Vector3d.SquaredMagnitude(center - neighbourhood.representative_position) <= search_radius_squared + neighbourhood.largest_relative_radius_squared + c) // (a+b)^2 = a^2 + b^2 + 2ab
+                    if (Vector3d.SquaredMagnitude(center - neighbourhood.representative_position) <= search_radius_squared + (neighbourhood.largest_relative_radius * neighbourhood.largest_relative_radius) + c) // (a+b)^2 = a^2 + b^2 + 2ab
                         return neighbourhood.representative_value;
                 }
             }

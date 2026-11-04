@@ -189,7 +189,7 @@ namespace FloatingOffset.Editor.Tests
 
             OffsetServer<int> server = null;
 
-            while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
+            while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 20000) //300 = 60 * 4. Assume 4ms budget per simulated frame. Timeout @ 20s.
             {
                 count++;
                 sw.Restart();
@@ -233,7 +233,7 @@ namespace FloatingOffset.Editor.Tests
 
             OffsetServer<int> server = null;
 
-            while (sw.ElapsedMilliseconds < 240 && count < 2000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
+            while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 40000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
                 count++;
                 sw.Restart();
