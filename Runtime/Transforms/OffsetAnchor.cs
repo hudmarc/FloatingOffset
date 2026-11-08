@@ -49,7 +49,7 @@ namespace FloatingOffset.Runtime
                 Debug.LogWarning("Tried to call Offset on non-existent Anchor");
                 return;
             }
-            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}"); //why does this return
+            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}");
 
             transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - new_offset);
         }

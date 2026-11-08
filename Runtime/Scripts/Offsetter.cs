@@ -31,7 +31,8 @@ namespace FloatingOffset.Runtime
         }
         protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
-            var objects = scene.GetRootGameObjects();
+            var objects = scene.GetRootGameObjects(); //TODO: Could this be a sorted cache that is refreshed every few frames?
+            // i.e. first 'n' objects are Offsettable, last k objects are IgnoreOffset
 
             Vector3d real_difference = old_offset - new_offset;
             Vector3 difference = OffsetUtils.ToVector3(real_difference);

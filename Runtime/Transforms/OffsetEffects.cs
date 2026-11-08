@@ -8,7 +8,7 @@ namespace FloatingOffset.Runtime
 {
     // Loosely based on the Unity Wiki FloatingOrigin script by Peter Stirling
     // URL: http://wiki.unity3d.com/index.php/Floating_Origin
-    public class OffsetEffects : Offsetter
+    public class OffsetEffects : OffsetBehaviour, IOffsettable<Scene>
     {
         [SerializeField]
         private ParticleSystem[] worldSpaceParticles = { };
@@ -16,36 +16,27 @@ namespace FloatingOffset.Runtime
         private LineRenderer[] worldSpaceLines = { };
         [SerializeField]
         private TrailRenderer[] trails = { };
-
-        [SerializeField]
-        OffsetView view;
         private static Vector3[] vertexBuffer = new Vector3[2048];
         private void Awake()
         {
             CacheWorldSpaceParticles();
             CacheWorldSpaceLines();
             CacheTrails();
-            if (view == null)
-            {
-                view = GetComponent<OffsetView>();
-            }
-            if (view == null)
-            {
-                Debug.LogError($"Could not find OffsetView on GameObject {gameObject.name}, destroying OffsetEffects.");
-            }
-            else
-            {
-                
-            }
+            OffsetManager.OnOffsetProcessorStateChange += OnOffsetManagerInitialized;
         }
-        protected override void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
+
+        void Start()
         {
-            base.OnOffset(old_offset, new_offset, scene, offsettables);
-            Vector3 delta = OffsetUtils.ToVector3(new_offset - old_offset);
-            // 2. Move world-space visual components
-            if (worldSpaceParticles.Length > 0) ShiftWorldParticles(delta);
-            if (worldSpaceLines.Length > 0) ShiftLines(delta);
-            if (trails.Length > 0) ShiftTrails(delta);
+            if (manager.IsServerActive())
+                OnOffsetManagerInitialized(true);
+        }
+
+        void OnOffsetManagerInitialized(bool hasProcessor)
+        {
+            Debug.Log($"Registered EffectOffsetter on {gameObject.name}");
+            OffsetManager.OnOffsetProcessorStateChange -= OnOffsetManagerInitialized;
+
+            manager.RegisterOffsettable(this, this.GetSceneKey());
         }
 
         private void CacheWorldSpaceParticles()
@@ -124,6 +115,7 @@ namespace FloatingOffset.Runtime
 
         private void ShiftTrails(Vector3 offset)
         {
+            Debug.Log($"Shifting trails by {offset}");
             for (int i = 0; i < trails.Length; i++)
             {
                 TrailRenderer trail = trails[i];
@@ -155,5 +147,19 @@ namespace FloatingOffset.Runtime
                 vertexBuffer = new Vector3[newSize];
             }
         }
+
+        public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
+        {
+            Vector3 delta = OffsetUtils.ToVector3(old_offset - new_offset);
+
+            if (worldSpaceParticles.Length > 0) ShiftWorldParticles(delta);
+            if (worldSpaceLines.Length > 0) ShiftLines(delta);
+            if (trails.Length > 0) ShiftTrails(delta);
+        }
+
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene) { }
+
+        public Scene GetSceneKey() => gameObject.scene;
+        public bool IsValid() => this != null;
     }
 }
