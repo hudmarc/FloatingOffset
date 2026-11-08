@@ -13,30 +13,29 @@ namespace FloatingOffset.Runtime
         [field: SerializeField]
         public SerializableVector3d realPosition { get; private set; }
         private Scene scene = default;
-        private bool initialized = false;
         void Awake()
         {
-            if (!manager.IsServerActive())
-                return;
-
-            initialized = true;
-            scene = gameObject.scene;
-            manager.RegisterOffsettable(this, this.GetSceneKey());
+            OffsetManager.OnOffsetProcessorStateChange += OnOffsetProcessorStateChange;
         }
+
         void Start()
         {
-            if (initialized)
-            {
-                Debug.Log($"Failed to set initial offset for {gameObject.name} because offset server was not initialized");
+            if(manager.IsServerActive())
+                OnOffsetProcessorStateChange(true);
+        }
+
+        void OnOffsetProcessorStateChange(bool hasProcessor)
+        {
+            OffsetManager.OnOffsetProcessorStateChange -= OnOffsetProcessorStateChange;
+            if (!hasProcessor)
                 return;
-            }
+
             scene = gameObject.scene;
             manager.RegisterOffsettable(this, this.GetSceneKey());
 
 
             Vector3d current_scene_offset = manager.GetLocalOffset(scene);
             transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - current_scene_offset);
-
         }
         void OnDestroy()
         {

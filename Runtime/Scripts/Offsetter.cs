@@ -21,9 +21,8 @@ namespace FloatingOffset.Runtime
         {
             OnOffset(old_offset, new_offset, scene, offsettables); //Calls MoveRootTransforms internally
         }
-        private void MoveRootTransforms(Vector3 offset, Scene scene)
+        private void MoveRootTransforms(Vector3 offset, GameObject[] objects)
         {
-            var objects = scene.GetRootGameObjects();
             foreach (GameObject g in objects)
             {
                 if (g.GetComponent<IgnoreOffset>() == null)
@@ -32,6 +31,8 @@ namespace FloatingOffset.Runtime
         }
         protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
+            var objects = scene.GetRootGameObjects();
+
             Vector3d real_difference = old_offset - new_offset;
             Vector3 difference = OffsetUtils.ToVector3(real_difference);
 
@@ -42,12 +43,12 @@ namespace FloatingOffset.Runtime
                         offsettables[i].OnPreOffset(old_offset, new_offset, scene);
                 }
 
-            MoveRootTransforms(difference, scene);
+            MoveRootTransforms(difference, objects);
 
             Vector3 remainder = OffsetUtils.ToVector3(real_difference - OffsetUtils.ToVector3d(difference));
 
             if (remainder.sqrMagnitude > 0.0f)
-                MoveRootTransforms(remainder, scene);
+                MoveRootTransforms(remainder, objects);
 
             if (offsettables != null)
                 for (int i = 0; i < offsettables.Count; i++)

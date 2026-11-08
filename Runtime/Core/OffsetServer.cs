@@ -74,9 +74,11 @@ namespace FloatingOffset.Runtime
         /// <param name="view"></param>
         public void RegisterView(IOffsetObject<TSceneKey> view)
         {
+            if (!scenes.HasScene(view.GetSceneKey()))
+                scenes.Register(view.GetSceneKey());
+
             if (scenes.Count < 1)
             {
-                scenes.Register(view.GetSceneKey());
                 source = scenes.GetSceneAt(0).key;
             }
 
@@ -467,7 +469,7 @@ namespace FloatingOffset.Runtime
                 return views[representative].GetSceneKey();
             }
             return default;
-        } 
+        }
         private struct ScenedUnion : IComparable<ScenedUnion>
         {
             public int scene_index;

@@ -10,20 +10,22 @@ namespace FloatingOffset.Runtime
     /// </summary>
     public abstract class OffsetManager : MonoBehaviour
     {
-        public static OffsetManager manager { get; private set; }
-        protected static void RegisterManagerSingleton(OffsetManager manager) => OffsetManager.manager = manager;
-        /// <summary>
-        /// Set false to disable physics processing on stacked scenes.
-        /// </summary>
-        public bool updateScenePhysicsInternally = true;
         /// <summary>
         /// Invoked on the server when the initial offset is sent. Invoked on clients when the initial offset is received.
         /// </summary>
         public static Action OnInitialOffset;
         /// <summary>
         /// Invoked on the server client after the OffsetProcessor and all its dependencies have been correctly initialized.
+        /// Passes "true" if the OffsetProcessor was created (i.e. on networked clients) or "false" if no OffsetProcessor was created.
         /// </summary>
-        public static Action OnOffsetProcessorInitialized;
+        
+        public static Action<bool> OnOffsetProcessorStateChange;
+        public static OffsetManager Manager { get; private set; }
+        protected static void RegisterManagerSingleton(OffsetManager manager) => OffsetManager.Manager = manager;
+        /// <summary>
+        /// Set false to disable physics processing on stacked scenes.
+        /// </summary>
+        public bool updateScenePhysicsInternally = true;
 
         /// <summary>
         /// Is this Manager logging?

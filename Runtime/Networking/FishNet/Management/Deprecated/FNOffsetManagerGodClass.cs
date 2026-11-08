@@ -96,6 +96,8 @@ namespace FloatingOffset.Runtime.Example
                 networkManager.TimeManager.OnPrePhysicsSimulation += PhysicsTick;
 
                 InstanceFinder.SceneManager.OnLoadEnd += OnLoadEnd;
+
+                OnOffsetProcessorStateChange?.Invoke(true); // Initialized as server
             }
             else if (args.ConnectionState == LocalConnectionState.Stopping)
             {
@@ -108,9 +110,12 @@ namespace FloatingOffset.Runtime.Example
 
         private void OnClientStateChange(ClientConnectionStateArgs args)
         {
+            // Called on client only
             if (args.ConnectionState == LocalConnectionState.Started && !stateInitialized)
             {
                 networkManager.ClientManager.RegisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
+
+                OnOffsetProcessorStateChange?.Invoke(false); // Initialized as client
             }
             else if (args.ConnectionState == LocalConnectionState.Stopping && !stateInitialized)
             {

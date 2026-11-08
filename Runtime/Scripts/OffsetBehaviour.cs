@@ -5,6 +5,6 @@ namespace FloatingOffset.Runtime
 {
     public class OffsetBehaviour : MonoBehaviour
     {
-        public static OffsetManager manager => OffsetManager.manager;
+        public static OffsetManager manager => OffsetManager.Manager;
     }
 }

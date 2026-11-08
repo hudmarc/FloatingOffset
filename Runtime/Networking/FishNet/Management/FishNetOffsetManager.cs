@@ -29,6 +29,7 @@ namespace FloatingOffset.Runtime.Example
         /// <summary>
         /// (Server/Client) Handles scene offsetting.
         /// </summary>
+        [SerializeField]
         private Offsetter offsetter;
         #endregion
 
@@ -71,8 +72,11 @@ namespace FloatingOffset.Runtime.Example
             this.offsetViewRegistry = new OffsetViewRegistry(localOffsetState, configuration.logging);
 
             if (offsetter == null)
-                offsetter = gameObject.GetComponent<Offsetter>();
-
+                if (gameObject.TryGetComponent(out Offsetter offsetter))
+                    this.offsetter = offsetter;
+                else
+                    this.offsetter = gameObject.AddComponent<Offsetter>();
+            
             if (TryGetComponent(out networkManager))
             {
                 networkManager.TimeManager.SetPhysicsMode(FishNet.Managing.Timing.PhysicsMode.TimeManager);
@@ -108,7 +112,7 @@ namespace FloatingOffset.Runtime.Example
                 if (configuration.logging)
                     Debug.Log("Offset server initialized as server");
 
-                OnOffsetProcessorInitialized?.Invoke(); // Initialized as server
+                OnOffsetProcessorStateChange?.Invoke(true); // Initialized as server
             }
             else if (args.ConnectionState == LocalConnectionState.Stopping)
             {
@@ -125,6 +129,7 @@ namespace FloatingOffset.Runtime.Example
             {
                 networkClientOffsetManager = new NetworkClientOffsetManager(configuration.logging, localOffsetState, offsettableRegistry, offsetter);
                 networkManager.ClientManager.RegisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
+                OnOffsetProcessorStateChange?.Invoke(false); // Initialized as client
             }
             else if (args.ConnectionState == LocalConnectionState.Stopping && networkServerOffsetManager == null)
             {
@@ -204,7 +209,7 @@ namespace FloatingOffset.Runtime.Example
         {
             bool isOwner = offsetView.TryGetComponent(out NetworkObject nob) && nob.ClientManager.Connection != null ? nob.OwnerId == nob.ClientManager.Connection.ClientId : false;
 
-            if (manager.IsLogging())
+            if (Manager.IsLogging())
                 Debug.Log($"{offsetView.gameObject.name} is owner: {isOwner} spawned: {nob.IsSpawned} owner: {nob.IsOwner} ownerID: {nob.OwnerId}");
 
             offsetViewRegistry.RegisterView(offsetView, SetupViewBeforeRegister, isOwner);

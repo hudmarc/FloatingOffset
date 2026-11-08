@@ -23,11 +23,24 @@ namespace FloatingOffset.Runtime
         [Tooltip("If true, the first instance of this prefab spawned will be considered the host's main view.")]
         public bool IsPlayer = false;
 
+        void Awake()
+        {
+            OffsetManager.OnOffsetProcessorStateChange += OnOffsetProcessorStateChange;
+        }
+
         void Start()
         {
+            if(manager.IsServerActive())
+                OnOffsetProcessorStateChange(true);
+        }
+
+        void OnOffsetProcessorStateChange(bool isProcessorActive)
+        {
+            OffsetManager.OnOffsetProcessorStateChange -= OnOffsetProcessorStateChange;
+
             if (manager.IsLogging())
-                Debug.Log("Started offset view");
-            if (!manager.IsServerActive())
+                Debug.Log("Started Offset View");
+            if (!isProcessorActive)
             {
                 OffsetManager.OnInitialOffset += OnInitialOffset;
             }
@@ -38,7 +51,7 @@ namespace FloatingOffset.Runtime
         }
         void OnInitialOffset()
         {
-            OffsetManager.OnOffsetProcessorInitialized -= OnInitialOffset;
+            OffsetManager.OnInitialOffset -= OnInitialOffset;
             if (manager.IsLogging())
                 Debug.Log($"Called OnInitialOffset");
             Register();
@@ -78,7 +91,6 @@ namespace FloatingOffset.Runtime
         void IOffsetObject<Scene>.OnSceneTransfer() => OnSceneTransfer?.Invoke();
         bool IOffsetObject<Scene>.IsPlayer() => IsPlayer;
         public bool IsValid() => registered;
-
         public string GetName() => gameObject.name;
     }
 }

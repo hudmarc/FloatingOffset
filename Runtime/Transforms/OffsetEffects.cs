@@ -8,23 +8,35 @@ namespace FloatingOffset.Runtime
 {
     // Loosely based on the Unity Wiki FloatingOrigin script by Peter Stirling
     // URL: http://wiki.unity3d.com/index.php/Floating_Origin
-    public class EffectOffsetter : Offsetter
+    public class OffsetEffects : Offsetter
     {
-        private ParticleSystem[] worldSpaceParticles;
-        private LineRenderer[] worldSpaceLines;
-        private TrailRenderer[] trails;
+        [SerializeField]
+        private ParticleSystem[] worldSpaceParticles = { };
+        [SerializeField]
+        private LineRenderer[] worldSpaceLines = { };
+        [SerializeField]
+        private TrailRenderer[] trails = { };
 
-        // A shared, reusable buffer to prevent memory allocations during the hot path.
-        // It will automatically grow if a trail or line has more vertices than its current size.
+        [SerializeField]
+        OffsetView view;
         private static Vector3[] vertexBuffer = new Vector3[2048];
-        private Scene scene = default;
-
         private void Awake()
         {
             CacheWorldSpaceParticles();
             CacheWorldSpaceLines();
             CacheTrails();
-            scene = gameObject.scene;
+            if (view == null)
+            {
+                view = GetComponent<OffsetView>();
+            }
+            if (view == null)
+            {
+                Debug.LogError($"Could not find OffsetView on GameObject {gameObject.name}, destroying OffsetEffects.");
+            }
+            else
+            {
+                
+            }
         }
         protected override void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
         {
