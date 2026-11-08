@@ -11,7 +11,7 @@ namespace FloatingOffset.Runtime
     public class OffsetAnchor : OffsetBehaviour, IOffsettable<Scene>
     {
         [field: SerializeField]
-        public Vector3d realPosition { get; private set; }
+        public SerializableVector3d realPosition { get; private set; }
         private Scene scene = default;
         private bool initialized = false;
         void Awake()
@@ -27,6 +27,7 @@ namespace FloatingOffset.Runtime
         {
             if (initialized)
             {
+                Debug.Log($"Failed to set initial offset for {gameObject.name} because offset server was not initialized");
                 return;
             }
             scene = gameObject.scene;
@@ -34,7 +35,7 @@ namespace FloatingOffset.Runtime
 
 
             Vector3d current_scene_offset = manager.GetLocalOffset(scene);
-            transform.position = OffsetUtils.ToVector3(realPosition - current_scene_offset);
+            transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - current_scene_offset);
 
         }
         void OnDestroy()
@@ -49,14 +50,14 @@ namespace FloatingOffset.Runtime
                 Debug.LogWarning("Tried to call Offset on non-existent Anchor");
                 return;
             }
-            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition}"); //why does this return
+            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}"); //why does this return
 
-            transform.position = OffsetUtils.ToVector3(realPosition - new_offset);
+            transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - new_offset);
         }
         public void SetRealPosition(Vector3d new_position)
         {
-            transform.position = OffsetUtils.ToVector3(new_position - realPosition);
-            realPosition = new_position;
+            transform.position = OffsetUtils.ToVector3(new_position - realPosition.ToVector3d());
+            realPosition = new SerializableVector3d(new_position);
         }
 
         public Scene GetSceneKey() => scene;

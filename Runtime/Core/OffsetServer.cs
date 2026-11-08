@@ -7,10 +7,10 @@ using FloatingOffset.Runtime.Types;
 namespace FloatingOffset.Runtime
 {
     /// <summary>
-    /// The OffsetServer manages all offset calculations for the FloatingOffset package. This class should exist as a single instance.
-    /// In a multiplayer environment, the OffsetServer will not be active on clients.
+    /// The OffsetProcessor manages all offset calculations for the FloatingOffset package. This class should exist as a single instance.
+    /// In a multiplayer environment, the OffsetProcessor will not be active on clients.
     /// </summary>
-    public class OffsetServer<TSceneKey>
+    public class OffsetProcessor<TSceneKey>
     {
         /// <summary>
         /// Quickly iterable list of views. An OffsetView is here <==> it is considered a view.
@@ -35,7 +35,7 @@ namespace FloatingOffset.Runtime
 
         // Passing the base values as parameters with default values gives you the 
         // exact same out-of-the-box behavior, but allows for injection later if needed.
-        public OffsetServer(IOffsetHandler<TSceneKey> handler, int JoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
+        public OffsetProcessor(IOffsetHandler<TSceneKey> handler, int JoinDistance = 5000, int MaxScenes = 200, int Hysteresis = 1000)
         {
             this.JoinDistance = JoinDistance;
             this.JoinDistanceSquared = JoinDistance * JoinDistance;

@@ -25,7 +25,7 @@ namespace FloatingOffset.Runtime.Example
         #region Fields (manager)
         [SerializeField]
         private OffsetConfiguration configuration;
-        private OffsetServer<Scene> server;
+        private OffsetProcessor<Scene> server;
 
         private Vector3d current_offset = Vector3d.zero;
         private NetworkManager networkManager;
@@ -71,7 +71,7 @@ namespace FloatingOffset.Runtime.Example
                 networkManager.ClientManager.OnClientConnectionState += OnClientStateChange;
             }
 
-            RegisterManager(this);
+            RegisterManagerSingleton(this);
         }
 
         void OnDestroy()
@@ -87,7 +87,7 @@ namespace FloatingOffset.Runtime.Example
             {
                 stateInitialized = true;
 
-                server = new OffsetServer<Scene>(this, configuration.MinimumJoinDistance, configuration.MaxScenes, configuration.Hysteresis);
+                server = new OffsetProcessor<Scene>(this, configuration.MinimumJoinDistance, configuration.MaxScenes, configuration.Hysteresis);
 
                 if (configuration.logging)
                     Debug.Log("Initialized universe");

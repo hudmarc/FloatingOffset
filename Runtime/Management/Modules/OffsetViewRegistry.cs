@@ -14,7 +14,7 @@ namespace FloatingOffset.Runtime.Example
         private LocalOffsetState localOffsetState;
 
         #region Network Server Only
-        private OffsetServer<Scene> server = null;
+        private OffsetProcessor<Scene> server = null;
         #endregion
 
         public OffsetViewRegistry(LocalOffsetState state, bool logging = true)
@@ -25,7 +25,7 @@ namespace FloatingOffset.Runtime.Example
                 UnityEngine.Debug.Log("(Server/Client) Instantiated OffsetViewRegistry");
         }
 
-        public void RegisterServer(OffsetServer<Scene> server)
+        public void RegisterServer(OffsetProcessor<Scene> server)
         {
             this.server = server;
         }

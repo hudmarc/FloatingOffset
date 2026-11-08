@@ -14,7 +14,7 @@ namespace FloatingOffset.Runtime.Example
 {
     public class NetworkServerOffsetManager : IOffsetHandler<Scene>
     {
-        private OffsetServer<Scene> server;
+        private OffsetProcessor<Scene> server;
         private Offsetter offsetter;
         private OffsetSceneState sceneState;
         private OffsettableRegistry offsettableRegistry;
@@ -66,7 +66,7 @@ namespace FloatingOffset.Runtime.Example
                     scene.GetPhysicsScene().Simulate(delta);
             }
         }
-        internal void RegisterOffsetServer(OffsetServer<Scene> server) => this.server = server;
+        internal void RegisterOffsetProcessor(OffsetProcessor<Scene> server) => this.server = server;
 
 
         #endregion

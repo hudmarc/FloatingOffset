@@ -29,7 +29,7 @@ This is currently the only open-source Unity package that can do this while main
 
 ## What's different about this package?
 
-At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetServer` contains the bulk of the implementation.
+At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetProcessor` contains the bulk of the implementation.
 
 ### Is this package fast enough for my game? I want to host my small friend group of 3000 people on one world on my server.
 
@@ -77,13 +77,13 @@ Best: 0.05ms @ 40 players
 
 You can think of an offset scene as a normal Unity scene with a particular offset from 0,0,0 represented in 64-bit doubles. The point of this package is to keep all players as close to the centers of their scenes as possible, and it does this using a variety of algorithms and datastructures.
 
-These are implemented in the OffsetServer as collections, you can view the offset of a given scene in the Editor when you have an OffsetTransform or OffsetAnchor selected. If you need to see the offset of a scene in code you can do this with `Vector3d GetSceneOffset(Scene scene)` (currently this is located on OffsetServer but will be moved, update to follow soon)
+These are implemented in the OffsetProcessor as collections, you can view the offset of a given scene in the Editor when you have an OffsetTransform or OffsetAnchor selected. If you need to see the offset of a scene in code you can do this with `Vector3d GetSceneOffset(Scene scene)` (currently this is located on OffsetProcessor but will be moved, update to follow soon)
 
 ### OffsetManager
 
 Manages the offset server and configuration. See `FishNetOffsetManager` for the core multiplayer version of this class.
 
-### OffsetServer (C# class)
+### OffsetProcessor (C# class)
 
 Implements the low level neighborhood clustering of this package. The core logic of this package could in the future be ported to Godot or another C# engine, and in the meantime this class is very testable.
 

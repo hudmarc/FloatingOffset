@@ -38,7 +38,7 @@ namespace FloatingOffset.Runtime
         }
         void OnInitialOffset()
         {
-            manager.OnOffsetServerInitialized -= OnInitialOffset;
+            manager.OnOffsetProcessorInitialized -= OnInitialOffset;
             if (manager.IsLogging())
                 Debug.Log($"Called OnInitialOffset");
             Register();

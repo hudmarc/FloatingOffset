@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace FloatingOffset.Runtime
 {
-    [System.Serializable]
+    [System.Serializable()]
     public readonly struct Vector3d : IEquatable<Vector3d>
     {
         public readonly double x;

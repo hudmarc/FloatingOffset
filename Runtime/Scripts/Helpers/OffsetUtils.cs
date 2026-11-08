@@ -9,7 +9,7 @@ namespace FloatingOffset.Runtime
     public static class OffsetUtils
     {
         /// <summary>
-        /// Is the OffsetServer active on this game instance? (In a networked environment, this is true on the network server's instance, but false on all other instances)
+        /// Is the OffsetProcessor active on this game instance? (In a networked environment, this is true on the network server's instance, but false on all other instances)
         /// </summary>
         public static bool ServerActive => OffsetBehaviour.manager.IsServerActive();
         /// <summary>
@@ -19,7 +19,7 @@ namespace FloatingOffset.Runtime
         {
             if (!ServerActive)
             {
-                Debug.LogWarning("TeleportTo cannot be called on instances without an active OffsetServer. If this is a networked game, use an RPC to call this on the server. Otherwise, make sure you have added an OffsetManager and it is starting correctly.");
+                Debug.LogWarning("TeleportTo cannot be called on instances without an active OffsetProcessor. If this is a networked game, use an RPC to call this on the server. Otherwise, make sure you have added an OffsetManager and it is starting correctly.");
                 return;
             }
             OffsetBehaviour.manager.TeleportTo(view, position);

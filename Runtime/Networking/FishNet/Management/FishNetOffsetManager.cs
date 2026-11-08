@@ -34,9 +34,9 @@ namespace FloatingOffset.Runtime.Example
 
         #region Plain C# Classes
         /// <summary>
-        /// (Server) The OffsetServer used for calculating offsets.
+        /// (Server) The OffsetProcessor used for calculating offsets.
         /// </summary>
-        private OffsetServer<Scene> server;
+        private OffsetProcessor<Scene> server;
         /// <summary>
         /// (Host/Client) Keeps track of the local offset of the MainView's scene.
         /// </summary>
@@ -80,7 +80,7 @@ namespace FloatingOffset.Runtime.Example
                 networkManager.ClientManager.OnClientConnectionState += OnClientStateChange;
             }
 
-            RegisterManager(this); //this way clients can still query their real offsets
+            RegisterManagerSingleton(this); //this way clients can still query their real offsets
         }
         // Called on server
         private void OnServerStateChange(ServerConnectionStateArgs args)
@@ -94,9 +94,9 @@ namespace FloatingOffset.Runtime.Example
 
                 networkServerOffsetManager = new NetworkServerOffsetManager(offsetSceneState, offsettableRegistry, networkManager, offsetter, localOffsetState, configuration.logging);
 
-                this.server = new OffsetServer<Scene>(networkServerOffsetManager, configuration.MinimumJoinDistance, configuration.MaxScenes, configuration.Hysteresis);
+                this.server = new OffsetProcessor<Scene>(networkServerOffsetManager, configuration.MinimumJoinDistance, configuration.MaxScenes, configuration.Hysteresis);
 
-                networkServerOffsetManager.RegisterOffsetServer(this.server);
+                networkServerOffsetManager.RegisterOffsetProcessor(this.server);
 
 
                 networkManager.TimeManager.OnPreTick += networkServerOffsetManager.Process;
@@ -108,7 +108,7 @@ namespace FloatingOffset.Runtime.Example
                 if (configuration.logging)
                     Debug.Log("Offset server initialized as server");
 
-                OnOffsetServerInitialized?.Invoke(); // Initialized as server
+                OnOffsetProcessorInitialized?.Invoke(); // Initialized as server
             }
             else if (args.ConnectionState == LocalConnectionState.Stopping)
             {

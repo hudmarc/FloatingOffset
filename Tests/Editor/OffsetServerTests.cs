@@ -5,17 +5,17 @@ using UnityEngine;
 
 namespace FloatingOffset.Editor.Tests
 {
-    public class OffsetServerTests
+    public class OffsetProcessorTests
     {
         private const int INITIAL_SCENE_KEY = 100;
         private const int REBASE_CRITERIA = 2048;
         private const int MAX_SCENES = 100;
 
         [Test]
-        public void OffsetServerInitialization()
+        public void OffsetProcessorInitialization()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            OffsetServer<int> server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            OffsetProcessor<int> server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
             Assert.NotNull(server);
         }
 
@@ -23,7 +23,7 @@ namespace FloatingOffset.Editor.Tests
         public void BasicApiMethods_Test()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            OffsetServer<int> server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            OffsetProcessor<int> server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             // 1. RegisterView & HasScene
@@ -54,7 +54,7 @@ namespace FloatingOffset.Editor.Tests
         public void OffsetTest()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
@@ -89,7 +89,7 @@ namespace FloatingOffset.Editor.Tests
         public void ErrorAccumulator()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
             var view = new MockOffsetObject(INITIAL_SCENE_KEY);
 
             server.RegisterView(view);
@@ -123,7 +123,7 @@ namespace FloatingOffset.Editor.Tests
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             const int VIEWS = 50;
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, VIEWS);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, VIEWS);
 
 
             MockOffsetObject[] views = new MockOffsetObject[VIEWS];
@@ -187,7 +187,7 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
-            OffsetServer<int> server = null;
+            OffsetProcessor<int> server = null;
 
             while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 20000) //300 = 60 * 4. Assume 4ms budget per simulated frame. Timeout @ 20s.
             {
@@ -231,7 +231,7 @@ namespace FloatingOffset.Editor.Tests
             double best = int.MaxValue;
             double sum = 0;
 
-            OffsetServer<int> server = null;
+            OffsetProcessor<int> server = null;
 
             while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 40000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
             {
@@ -262,10 +262,10 @@ namespace FloatingOffset.Editor.Tests
             }
         }
 
-        OffsetServer<int> StressTest(int VIEWS, int SPREAD = 1)
+        OffsetProcessor<int> StressTest(int VIEWS, int SPREAD = 1)
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, VIEWS);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, VIEWS);
 
 
             MockOffsetObject[] views = new MockOffsetObject[VIEWS];
@@ -315,7 +315,7 @@ namespace FloatingOffset.Editor.Tests
         public void OffsetTransformGroupChange()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             var viewA = new MockOffsetObject(INITIAL_SCENE_KEY); //INITIAL_SCENE_KEY =100
             var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
@@ -350,7 +350,7 @@ namespace FloatingOffset.Editor.Tests
         public void StragglersVsGroup()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             var control = new MockOffsetObject(INITIAL_SCENE_KEY);
             var v0 = new MockOffsetObject(INITIAL_SCENE_KEY);
@@ -392,7 +392,7 @@ namespace FloatingOffset.Editor.Tests
         public void MergeTestOffline()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             var control = new MockOffsetObject(INITIAL_SCENE_KEY);
             var erraticView = new MockOffsetObject(INITIAL_SCENE_KEY);
@@ -438,7 +438,7 @@ namespace FloatingOffset.Editor.Tests
         public void GetNearbySceneTest_InitialState()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             server.Process();
 
@@ -462,7 +462,7 @@ namespace FloatingOffset.Editor.Tests
         public void GetNearbySceneTest_MultipleSplitScenes()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
             var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);
@@ -500,7 +500,7 @@ namespace FloatingOffset.Editor.Tests
         public void GetNearbySceneTest_MidpointBetweenScenes()
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
-            var server = new OffsetServer<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
+            var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, MAX_SCENES);
 
             var viewA = new MockOffsetObject(INITIAL_SCENE_KEY);
             var viewB = new MockOffsetObject(INITIAL_SCENE_KEY);

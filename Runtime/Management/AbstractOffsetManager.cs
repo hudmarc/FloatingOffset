@@ -1,14 +1,17 @@
 using System;
 using FloatingOffset.Runtime.Types;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
     /// <summary>
-    /// The offset manager bootstraps the OffsetServer. Disable it on network clients.
+    /// The offset manager bootstraps the OffsetProcessor. Disable it on network clients.
     /// </summary>
-    public abstract class OffsetManager : OffsetBehaviour
+    public abstract class OffsetManager : MonoBehaviour
     {
+        public static OffsetManager manager { get; private set; }
+        protected static void RegisterManagerSingleton(OffsetManager manager) => OffsetManager.manager = manager;
         /// <summary>
         /// Set false to disable physics processing on stacked scenes.
         /// </summary>
@@ -16,11 +19,11 @@ namespace FloatingOffset.Runtime
         /// <summary>
         /// Invoked on the server when the initial offset is sent. Invoked on clients when the initial offset is received.
         /// </summary>
-        public Action OnInitialOffset;
+        public static Action OnInitialOffset;
         /// <summary>
-        /// Invoked on the server after the OffsetServer and all its dependencies have been correctly initialized.
+        /// Invoked on the server client after the OffsetProcessor and all its dependencies have been correctly initialized.
         /// </summary>
-        public Action OnOffsetServerInitialized;
+        public static Action OnOffsetProcessorInitialized;
 
         /// <summary>
         /// Is this Manager logging?
