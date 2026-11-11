@@ -35,7 +35,7 @@ namespace FloatingOffset.Runtime
             // i.e. first 'n' objects are Offsettable, last k objects are IgnoreOffset
 
             Vector3d real_difference = old_offset - new_offset;
-            Vector3 difference = OffsetUtils.ToVector3(real_difference);
+            Vector3 difference = real_difference.ToVector3();
 
             if (offsettables != null)
                 for (int i = 0; i < offsettables.Count; i++)
@@ -46,7 +46,7 @@ namespace FloatingOffset.Runtime
 
             MoveRootTransforms(difference, objects);
 
-            Vector3 remainder = OffsetUtils.ToVector3(real_difference - OffsetUtils.ToVector3d(difference));
+            Vector3 remainder = (real_difference - difference.ToVector3d()).ToVector3();
 
             if (remainder.sqrMagnitude > 0.0f)
                 MoveRootTransforms(remainder, objects);

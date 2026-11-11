@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FishNet;
 using FishNet.Component.Transforming;
 using FishNet.Managing;
+using FishNet.Managing.Observing;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FloatingOffset.Runtime.Example.Types;
@@ -226,7 +227,7 @@ namespace FloatingOffset.Runtime.Example
                 }
 
 
-                InstanceFinder.ServerManager.Objects.RebuildObservers();
+                // InstanceFinder.ServerManager.Objects.RebuildObservers();
             }
 
             UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(offsetMono.gameObject, to);

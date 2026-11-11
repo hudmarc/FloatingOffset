@@ -152,7 +152,7 @@ namespace FloatingOffset.Runtime
 
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
-            Vector3 delta = OffsetUtils.ToVector3(old_offset - new_offset);
+            Vector3 delta = (old_offset - new_offset).ToVector3();
 
             if (worldSpaceParticles.Length > 0) ShiftWorldParticles(delta);
             if (worldSpaceLines.Length > 0) ShiftLines(delta);
