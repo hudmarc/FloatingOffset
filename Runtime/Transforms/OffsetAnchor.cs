@@ -63,9 +63,6 @@ namespace FloatingOffset.Runtime
 
         public Scene GetSceneKey() => scene;
         public bool IsValid() => this != null;
-
-        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
-        {
-        }
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene){ }
     }
 }
