@@ -16,9 +16,9 @@ namespace FloatingOffset.Runtime.Example
     {
         private OffsetProcessor<Scene> server;
         private Offsetter offsetter;
-        private OffsetSceneState sceneState;
+        private EngineUniverseState<Scene> sceneState;
         private OffsettableRegistry offsettableRegistry;
-        private LocalOffsetState localOffsetState;
+        private LocalUniverseState<Scene> localOffsetState;
         private readonly LoadOptions Options = new LoadOptions
         {
             AllowStacking = true,
@@ -33,7 +33,7 @@ namespace FloatingOffset.Runtime.Example
         protected readonly LoadSceneParameters parameters = new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D);
         Queue<Action<Scene>> readyActions = new Queue<Action<Scene>>();
 
-        public NetworkServerOffsetManager(OffsetSceneState state, OffsettableRegistry offsettableRegistry, NetworkManager networkManager, Offsetter offsetter, LocalOffsetState localOffsetState, bool logging)
+        public NetworkServerOffsetManager(EngineUniverseState<Scene> state, OffsettableRegistry offsettableRegistry, NetworkManager networkManager, Offsetter offsetter, LocalUniverseState<Scene> localOffsetState, bool logging)
         {
             this.logging = logging;
             this.sceneState = state;
@@ -212,20 +212,20 @@ namespace FloatingOffset.Runtime.Example
                     Vector3d toOffset = sceneState.GetOffset(to);
 
                     ReceiveOffsetBroadcast responseMsg = new ReceiveOffsetBroadcast
-                        {
-                            OffsetX = toOffset.x,
-                            OffsetY = toOffset.y,
-                            OffsetZ = toOffset.z,
-                            ViewNob = nob,
-                            Tick = InstanceFinder.TimeManager.Tick
-                        };
+                    {
+                        OffsetX = toOffset.x,
+                        OffsetY = toOffset.y,
+                        OffsetZ = toOffset.z,
+                        ViewNob = nob,
+                        Tick = InstanceFinder.TimeManager.Tick
+                    };
 
-                        if (logging)
-                            Debug.Log("Sent broadcast to client");
-                        nob.Owner.Broadcast(responseMsg);
+                    if (logging)
+                        Debug.Log("Sent broadcast to client");
+                    nob.Owner.Broadcast(responseMsg);
                 }
 
-                
+
                 InstanceFinder.ServerManager.Objects.RebuildObservers();
             }
 
@@ -238,22 +238,36 @@ namespace FloatingOffset.Runtime.Example
             if (logging)
                 Debug.Log($"Transferred {offsetMono.name} from {from.HandleToHex()} {sceneState.GetOffset(from)} to {to.HandleToHex()} {sceneState.GetOffset(to)} ");
 
-            
+
 
             Scene main_scene = localOffsetState.GetMainSceneKey();
 
             if (localOffsetState.IsMainView(offsetObject))
             {
+                if (logging)
+                    Debug.Log($"Hiding Scene {from.name}");
                 // Only update the total visibility of scenes when the main view changes between scenes.
                 SetSceneVisibility(from, false);
+
+                if (logging)
+                    Debug.Log($"Showing Scene {to.name}");
                 SetSceneVisibility(to, true);
             }
             else
             {
                 if (to == main_scene)
+                {
                     SetGameObjectVisible(offsetMono.gameObject, true); // Non-main views become visible when entering the main view's scene.
+                    if (logging)
+                        Debug.Log($"Showing object Scene {offsetMono.gameObject.name} because it entered main scene {main_scene.name}");
+
+                }
                 else
+                {
                     SetGameObjectVisible(offsetMono.gameObject, false); // Non-main views become invisible when leaving the main view's scene.
+                    if (logging)
+                        Debug.Log($"Hiding object Scene {offsetMono.gameObject.name} because it left main scene {main_scene.name}");
+                }
             }
         }
 

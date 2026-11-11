@@ -20,7 +20,7 @@ namespace FloatingOffset.Runtime
 
         void Start()
         {
-            if(manager.IsServerActive())
+            if (manager.IsServerActive())
                 OnOffsetProcessorStateChange(true);
         }
 
@@ -39,7 +39,8 @@ namespace FloatingOffset.Runtime
         }
         void OnDestroy()
         {
-            Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
+            if (manager.IsLogging())
+                Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
             manager.UnregisterOffsettable(this, this.GetSceneKey());
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
@@ -49,7 +50,8 @@ namespace FloatingOffset.Runtime
                 Debug.LogWarning("Tried to call Offset on non-existent Anchor");
                 return;
             }
-            Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}");
+            if (manager.IsLogging())
+                Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}");
 
             transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - new_offset);
         }

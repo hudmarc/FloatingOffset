@@ -3,20 +3,20 @@ using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
-    public class LocalOffsetState
+    public class LocalUniverseState<T>
     {
-        private IOffsetObject<Scene> mainView = null;
+        private IOffsetObject<T> mainView = null;
         public Vector3d current_offset = Vector3d.zero;
 
-        public LocalOffsetState(bool logging)
+        public LocalUniverseState(bool logging)
         {
             if (logging)
                 UnityEngine.Debug.Log("(Host/Client) Instantiated LocalOffsetState");
         }
 
-        public IOffsetObject<Scene> MainView => mainView;
+        public IOffsetObject<T> MainView => mainView;
 
-        public void TrySetMainView(IOffsetObject<Scene> view)
+        public void TrySetMainView(IOffsetObject<T> view)
         {
             if (mainView == null)
             {
@@ -26,7 +26,7 @@ namespace FloatingOffset.Runtime
                 }
             }
         }
-        public Scene GetMainSceneKey() => mainView == null ? default : mainView.GetSceneKey();
+        public T GetMainSceneKey() => mainView == null ? default : mainView.GetSceneKey();
 
         public bool IsMainView(IOffsetObject<Scene> offsetObject) => offsetObject == mainView;
     }

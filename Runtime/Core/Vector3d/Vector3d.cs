@@ -46,6 +46,41 @@ namespace FloatingOffset.Runtime
         public static bool operator ==(in Vector3d lhs, in Vector3d rhs) => lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in Vector3d lhs, in Vector3d rhs) => !(lhs == rhs);
+        /// <summary>
+        /// Linearly interpolates between vector a and b by amount t (clamped between 0 and 1).
+        /// </summary>
+        /// <param name="a">Vector a.</param>
+        /// <param name="b">Vector b.</param>
+        /// <param name="t">How much to blend from a to b.</param>
+        /// <returns>The result of the lerp.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3d Lerp(Vector3d a, Vector3d b, float t)
+        {
+            t = Math.Clamp(t, 0f, 1f);
+            return new Vector3d(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t
+            );
+        }
+
+        /// <summary>
+        /// Linearly interpolates between vector a and b by unclamped amount t.
+        /// </summary>
+        /// <param name="a">Vector a.</param>
+        /// <param name="b">Vector b.</param>
+        /// <param name="t">How much to blend from a to b.</param>
+        /// <returns>The result of the lerp.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3d LerpUnclamped(Vector3d a, Vector3d b, float t)
+        {
+            return new Vector3d(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t
+            );
+        }
+
         public override int GetHashCode() => HashCode.Combine(x, y, z);
         public override bool Equals(object obj) => obj is Vector3d other && Equals(other);
         public bool Equals(Vector3d other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);

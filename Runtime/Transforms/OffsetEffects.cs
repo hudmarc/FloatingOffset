@@ -33,7 +33,8 @@ namespace FloatingOffset.Runtime
 
         void OnOffsetManagerInitialized(bool hasProcessor)
         {
-            Debug.Log($"Registered EffectOffsetter on {gameObject.name}");
+            if (manager.IsLogging())
+                Debug.Log($"Registered EffectOffsetter on {gameObject.name}");
             OffsetManager.OnOffsetProcessorStateChange -= OnOffsetManagerInitialized;
 
             manager.RegisterOffsettable(this, this.GetSceneKey());
@@ -115,7 +116,8 @@ namespace FloatingOffset.Runtime
 
         private void ShiftTrails(Vector3 offset)
         {
-            Debug.Log($"Shifting trails by {offset}");
+            if (manager.IsLogging())
+                Debug.Log($"Shifting trails by {offset}");
             for (int i = 0; i < trails.Length; i++)
             {
                 TrailRenderer trail = trails[i];

@@ -1,6 +1,7 @@
 using FishNet;
 using FloatingOffset.Runtime.Example.Types;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
 {
@@ -8,10 +9,10 @@ namespace FloatingOffset.Runtime
     {
         private Offsetter offsetter;
         private bool logging;
-        private LocalOffsetState localOffsetState;
+        private LocalUniverseState<Scene> localOffsetState;
         private OffsettableRegistry offsettableRegistry;
 
-        public NetworkClientOffsetManager(bool logging, LocalOffsetState localOffsetState, OffsettableRegistry offsettableRegistry, Offsetter offsetter)
+        public NetworkClientOffsetManager(bool logging, LocalUniverseState<Scene> localOffsetState, OffsettableRegistry offsettableRegistry, Offsetter offsetter)
         {
             this.logging = logging;
             this.localOffsetState = localOffsetState;

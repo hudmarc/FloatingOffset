@@ -11,13 +11,13 @@ namespace FloatingOffset.Runtime.Example
     public class OffsetViewRegistry
     {
         private bool logging;
-        private LocalOffsetState localOffsetState;
+        private LocalUniverseState<Scene> localOffsetState;
 
         #region Network Server Only
         private OffsetProcessor<Scene> server = null;
         #endregion
 
-        public OffsetViewRegistry(LocalOffsetState state, bool logging = true)
+        public OffsetViewRegistry(LocalUniverseState<Scene> state, bool logging = true)
         {
             this.logging = logging;
             this.localOffsetState = state;

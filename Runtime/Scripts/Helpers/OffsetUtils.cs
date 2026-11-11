@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -41,26 +42,7 @@ namespace FloatingOffset.Runtime
 
             return UnityToReal(trf.position, OffsetBehaviour.manager.GetLocalOffset(scene));
         }
-        /// <summary>
-        /// Shorthand for <code>gameObject.scene.GetPhysicsScene()</code>
-        /// </summary>
-        /// <param name="gameObject"></param>
-        /// <returns></returns>
-        public static PhysicsScene Physics(this GameObject gameObject) => gameObject.scene.GetPhysicsScene();
-        /// <summary>
-        /// Converts the given Vector3 to a Vector3d
-        /// </summary>
-        /// <param name="vector"></param>
-        /// <returns></returns>
-        public static Vector3d ToVector3d(this Vector3 vector) => new Vector3d(vector.x, vector.y, vector.z);
-        /// <summary>
-        /// Converts the given Vector3d to a Vector3
-        /// </summary>
-        /// <param name="vector"></param>
-        /// <returns></returns>
-        public static Vector3 ToVector3(this Vector3d vector) => new Vector3((float)vector.x, (float)vector.y, (float)vector.z);
-
-        // Custom extension methods for the Floating Offset package. Full test coverage under "Functional".
+        // Moved extension methods to "Helpers"
 
         /// <summary>
         /// Given a real position and an offset, subtracts the offset and returns a plain Vector3 scene position.
@@ -68,19 +50,38 @@ namespace FloatingOffset.Runtime
         /// <param name="realPosition">The real position</param>
         /// <param name="offset">The offset of the scene.</param>
         /// <returns></returns>
-        public static Vector3 RealToUnity(Vector3d realPosition, Vector3d offset) => ToVector3(realPosition - offset);
+        public static Vector3 RealToUnity(Vector3d realPosition, Vector3d offset) => (realPosition - offset).ToVector3();
         /// <summary>
         /// Given a unity position as a Vector3 and an offset as a vector3d, returns the resulting real position.
         /// </summary>
         /// <param name="unityPosition">The unity scene position.</param>
         /// <param name="offset">The offset of the scene.</param>
         /// <returns></returns>
-        public static Vector3d UnityToReal(Vector3 unityPosition, Vector3d offset) => ToVector3d(unityPosition) + offset;
+        public static Vector3d UnityToReal(Vector3 unityPosition, Vector3d offset) => (unityPosition).ToVector3d() + offset;
         /// <summary>
         /// Gets the nearest scene to the given position in real space.
         /// </summary>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static Scene GetNearestScene(Vector3d position)=>OffsetBehaviour.manager.GetNearbyScene(position);
+        public static Scene GetNearestScene(Vector3d position) => OffsetBehaviour.manager.GetNearbyScene(position);        
+        
+        /// <summary>
+        /// Given a real position and a scene it returns the objects scene position
+        /// </summary>
+        /// <remarks>If scene is not found in the OffsetManager then the position itself is returned</remarks>
+        /// <param name="realPosition">The real position</param>
+        /// <param name="offset">The offset of the scene.</param>
+        /// <returns></returns>
+        public static Vector3 RealToUnity(Vector3d realPosition, Scene scene)
+        {
+
+
+            if (!OffsetBehaviour.manager.HasScene(scene))
+            {
+                return realPosition.ToVector3();
+            }
+
+            return RealToUnity(realPosition, OffsetBehaviour.manager.GetLocalOffset(scene));
+        }
     }
 }

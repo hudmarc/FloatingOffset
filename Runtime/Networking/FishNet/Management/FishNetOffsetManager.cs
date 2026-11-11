@@ -35,13 +35,17 @@ namespace FloatingOffset.Runtime.Example
 
         #region Plain C# Classes
         /// <summary>
-        /// (Server) The OffsetProcessor used for calculating offsets.
+        /// (Server) The OffsetProcessor used for calculating offsets. [Formerly called OffsetServer]
         /// </summary>
         private OffsetProcessor<Scene> server;
         /// <summary>
         /// (Host/Client) Keeps track of the local offset of the MainView's scene.
         /// </summary>
-        private LocalOffsetState localOffsetState;
+        private LocalUniverseState<Scene> localOffsetState;
+        /// <summary>
+        /// (Server) Tracks the state of all offset scenes on the server.
+        /// </summary>
+        private EngineUniverseState<Scene> offsetSceneState;
         /// <summary>
         /// (Server/Client) Tracks registered offsettables and associates them to scenes.
         /// </summary>
@@ -58,16 +62,13 @@ namespace FloatingOffset.Runtime.Example
         /// (Client) Handles client-side networking functionality.
         /// </summary>
         private NetworkClientOffsetManager networkClientOffsetManager;
-        /// <summary>
-        /// (Server) Tracks the state of all offset scenes on the server.
-        /// </summary>
-        private OffsetSceneState offsetSceneState;
+        
 
         #endregion
 
         void Awake()
         {
-            this.localOffsetState = new LocalOffsetState(configuration.logging);
+            this.localOffsetState = new LocalUniverseState<Scene>(configuration.logging);
             this.offsettableRegistry = new OffsettableRegistry(configuration.logging);
             this.offsetViewRegistry = new OffsetViewRegistry(localOffsetState, configuration.logging);
 
@@ -94,7 +95,7 @@ namespace FloatingOffset.Runtime.Example
                 if (configuration.logging)
                     Debug.Log("Initialized universe");
 
-                offsetSceneState = new OffsetSceneState();
+                offsetSceneState = new EngineUniverseState<Scene>();
 
                 networkServerOffsetManager = new NetworkServerOffsetManager(offsetSceneState, offsettableRegistry, networkManager, offsetter, localOffsetState, configuration.logging);
 
