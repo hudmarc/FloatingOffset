@@ -83,10 +83,10 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="position"></param>
         public void TeleportTo(Vector3d position) => OffsetUtils.TeleportTo(this, position);
-        Vector3d IOffsetObject<Scene>.GetEnginePosition() => OffsetUtils.ToVector3d(transform.position);
+        Vector3d IOffsetObject<Scene>.GetEnginePosition() => transform.position.ToVector3d();
         Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
-        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = OffsetUtils.ToVector3(position);
+        void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = position.ToVector3();
         void IOffsetObject<Scene>.OnPreSceneTransfer() => OnPreSceneTransfer?.Invoke();
         void IOffsetObject<Scene>.OnSceneTransfer() => OnSceneTransfer?.Invoke();
         bool IOffsetObject<Scene>.IsPlayer() => IsPlayer;

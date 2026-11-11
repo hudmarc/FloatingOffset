@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -63,8 +64,8 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static Scene GetNearestScene(Vector3d position) => OffsetBehaviour.manager.GetNearbyScene(position);        
-        
+        public static Scene GetNearestScene(Vector3d position) => OffsetBehaviour.manager.GetNearbyScene(position);
+
         /// <summary>
         /// Given a real position and a scene it returns the objects scene position
         /// </summary>
@@ -83,5 +84,24 @@ namespace FloatingOffset.Runtime
 
             return RealToUnity(realPosition, OffsetBehaviour.manager.GetLocalOffset(scene));
         }
+        
+        /// <summary>
+        /// Moved to Helpers.cs as an extension method on Vector3d. This call signature will be removed from OffsetUtils.
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Obsolete]
+        public static Vector3d ToVector3d(Vector3 vector) => Helpers.ToVector3d(vector);
+
+
+        /// <summary>
+        /// Moved to Helpers.cs as an extension method on Vector3d. This call signature will be removed from OffsetUtils.
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Obsolete]
+        public static Vector3 ToVector3(Vector3d vector) => Helpers.ToVector3(vector);
     }
 }

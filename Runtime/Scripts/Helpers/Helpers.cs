@@ -99,6 +99,6 @@ namespace FloatingOffset.Runtime
             this.y = y;
             this.z = z;
         }
-        public Vector3d ToVector3d() => new Vector3d(x, y, z);
+        public Vector3d Value => new Vector3d(x, y, z);
     }
 }

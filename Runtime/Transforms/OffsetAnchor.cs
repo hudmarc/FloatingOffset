@@ -35,7 +35,7 @@ namespace FloatingOffset.Runtime
 
 
             Vector3d current_scene_offset = manager.GetLocalOffset(scene);
-            transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - current_scene_offset);
+            transform.position = (realPosition.Value - current_scene_offset).ToVector3();
         }
         void OnDestroy()
         {
@@ -51,13 +51,13 @@ namespace FloatingOffset.Runtime
                 return;
             }
             if (manager.IsLogging())
-                Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.ToVector3d()}");
+                Debug.Log($"Moved {gameObject.name} from {old_offset} to {new_offset} at position {realPosition.Value}");
 
-            transform.position = OffsetUtils.ToVector3(realPosition.ToVector3d() - new_offset);
+            transform.position = (realPosition.Value - new_offset).ToVector3();
         }
         public void SetRealPosition(Vector3d new_position)
         {
-            transform.position = OffsetUtils.ToVector3(new_position - realPosition.ToVector3d());
+            transform.position = (new_position - realPosition.Value).ToVector3();
             realPosition = new SerializableVector3d(new_position);
         }
 
