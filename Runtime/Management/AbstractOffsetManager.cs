@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -98,5 +99,10 @@ namespace FloatingOffset.Runtime
         /// <param name="position"></param>
         /// <returns></returns>
         public abstract Scene GetNearbyScene(Vector3d position);
+        public abstract Scene GetLocalScene();
+        public abstract float GetSceneRadius(Scene scene);
+        public abstract OffsetConfiguration GetOffsetConfiguration();
+        public abstract Scene[] GetScenes();
+        public abstract Vector3d GetOffset(Scene scene);
     }
 }

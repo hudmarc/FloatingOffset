@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using FishNet;
 using FishNet.Component.Transforming;
 using FishNet.Managing;
@@ -62,7 +63,7 @@ namespace FloatingOffset.Runtime.Example
         /// (Client) Handles client-side networking functionality.
         /// </summary>
         private NetworkClientOffsetManager networkClientOffsetManager;
-        
+
 
         #endregion
 
@@ -77,7 +78,7 @@ namespace FloatingOffset.Runtime.Example
                     this.offsetter = offsetter;
                 else
                     this.offsetter = gameObject.AddComponent<Offsetter>();
-            
+
             if (TryGetComponent(out networkManager))
             {
                 networkManager.TimeManager.SetPhysicsMode(FishNet.Managing.Timing.PhysicsMode.TimeManager);
@@ -195,6 +196,15 @@ namespace FloatingOffset.Runtime.Example
 
             OnInitialOffset?.Invoke();
         }
+
+        public override Scene[] GetScenes() => server == null ? new Scene[] { localOffsetState.MainView.GetSceneKey() } : offsetSceneState.offsetScenes.ToArray();
+
+        public override float GetSceneRadius(Scene scene) => server.GetRadius(server.GetSceneOffset(scene));
+        public override Vector3d GetOffset(Scene scene) => server.GetSceneOffset(scene);
+
+        public override Scene GetLocalScene() => localOffsetState.GetMainSceneKey();
+        public override OffsetConfiguration GetOffsetConfiguration() => configuration;
+
 
         public override void TeleportTo(OffsetView view, Vector3d position)
         {

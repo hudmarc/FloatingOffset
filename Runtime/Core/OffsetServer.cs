@@ -96,6 +96,8 @@ namespace FloatingOffset.Runtime
             views_to_remove.Add(offsettable);
         }
 
+        public float GetRadius(Vector3d center) => grid.GetNeighbourhoodRadius(center);
+
         public int RegisteredViewCount() => views.Count - views_to_remove.Count;
         public int ActualViewCount() => views.Count;
 

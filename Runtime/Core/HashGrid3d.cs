@@ -126,6 +126,16 @@ namespace FloatingOffset.Runtime
             }
             return -1;
         }
+        public float GetNeighbourhoodRadius(Vector3d center)
+        {
+            Vector3d key = Quantize(center);
+
+            if (dict.TryGetValue(key, out Neighbourhood neighbourhood))
+            {
+                return neighbourhood.largest_relative_radius;
+            }
+            return 1;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3d Quantize(Vector3d vector)
         {
