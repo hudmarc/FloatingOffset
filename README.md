@@ -62,13 +62,12 @@ Best: 0.05ms @ 40 players
 `Tested on 6-Core Mobile Core i7 (I7-9750H) @ 4.5Ghz Turbo Boost`
 
 ## Multiplayer Setup
-- Create an Offline Scene, this should have your FishNet `NetworkManager`, add the `OffsetManagerNetworking` component and untick Unity Physics if you want to use TimeManager physics.
-- Add an OffsetTransform to your player, and tick 'isView'
+- Create an Offline Scene, this should have your FishNet `NetworkManager`, add the `FishNetOffsetManager` component and untick Unity Physics if you want to use TimeManager physics.
+- Add an `OffsetView` to your player
 - If you have static structures that can be duplicated, anchor them in real space using the `OffsetAnchor`
-- If your game uses line renderers or particle effects and you want them to be offset correctly add the `EffectOffsetter` to your manager object and assign it to the `OffsetManager`
-- To configure the Floating Offset backend, set your preferences to the `OffsetUniverse`. It should be automatically created at the root of your project. If not, you can create your own under  `Assets/Create/Floating Offset/OffsetUniverse`
-- To teleport views to specific real positions, use `universe.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
-
+- If your game uses line renderers or particle effects and you want them to be offset correctly add the `OffsetEffect` to the root object with the emitter(s)/line renderers. It will automatically detect line renderers or particle effects in all child objects as well.
+- To configure the Floating Offset backend, set your preferences on the OffsetManager.
+- To teleport views to specific real positions, use `OffsetUtils.TeleportTo(OffsetTransform offsetTransform, Vector3d position)`
 
 
 ## Glossary
