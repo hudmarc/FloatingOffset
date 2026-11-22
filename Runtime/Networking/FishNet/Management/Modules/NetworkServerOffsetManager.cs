@@ -147,17 +147,11 @@ namespace FloatingOffset.Runtime.Example
 
             if (logging)
                 Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET: [{scene.key.HandleToHex()}]\n{sceneState.GetOffset(scene.key):#.#}->{scene.offset:#.#} ");
+                
             Vector3d old_offset = sceneState.GetOffset(key);
             sceneState.SetOffset(key, scene.offset);
 
-            if (offsettableRegistry.GetOffsettablesInScene(scene.key, out var offsettablesInScene))
-            {
-                offsetter.Offset(old_offset, sceneState.GetOffset(key), scene.key, offsettablesInScene);
-            }
-            else
-            {
-                offsetter.Offset(old_offset, sceneState.GetOffset(key), scene.key);
-            }
+            offsetter.Offset(old_offset, sceneState.GetOffset(key), scene.key, offsettableRegistry);
 
             var objects = scene.key.GetRootGameObjects();
 

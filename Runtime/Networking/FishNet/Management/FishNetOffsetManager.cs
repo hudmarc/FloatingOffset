@@ -214,8 +214,8 @@ namespace FloatingOffset.Runtime.Example
         }
 
         public override Vector3d GetLocalOffset(Scene scene) => server == null ? localOffsetState.current_offset : offsetSceneState.GetOffset(scene);
-        public override void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettableRegistry.RegisterOffsettable(offsettable, scene);
-        public override void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettableRegistry.UnregisterOffsettable(offsettable, scene);
+        public override void RegisterKeyed(ISceneKeyedObject<Scene> offsettable) => offsettableRegistry.RegisterOffsettable(offsettable);
+        public override void UnregisterKeyed(ISceneKeyedObject<Scene> offsettable) => offsettableRegistry.UnregisterOffsettable(offsettable);
         public override void RegisterView(OffsetView offsetView)
         {
             bool isOwner = offsetView.TryGetComponent(out NetworkObject nob) && nob.ClientManager.Connection != null ? nob.OwnerId == nob.ClientManager.Connection.ClientId : false;

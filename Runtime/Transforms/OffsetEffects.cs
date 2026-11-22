@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,7 +7,7 @@ namespace FloatingOffset.Runtime
 {
     // Loosely based on the Unity Wiki FloatingOrigin script by Peter Stirling
     // URL: http://wiki.unity3d.com/index.php/Floating_Origin
-    public class OffsetEffects : OffsetBehaviour, IOffsettable<Scene>
+    public class OffsetEffects : OffsetBehaviour, IPreSceneOffsetListener<Scene>, ISceneOffsetListener<Scene>
     {
         [SerializeField]
         private ParticleSystem[] worldSpaceParticles = { };
@@ -37,7 +36,7 @@ namespace FloatingOffset.Runtime
                 Debug.Log($"Registered EffectOffsetter on {gameObject.name}");
             OffsetManager.OnOffsetProcessorStateChange -= OnOffsetManagerInitialized;
 
-            manager.RegisterOffsettable(this, this.GetSceneKey());
+            manager.RegisterKeyed(this);
         }
 
         private void CacheWorldSpaceParticles()
@@ -163,5 +162,7 @@ namespace FloatingOffset.Runtime
 
         public Scene GetSceneKey() => gameObject.scene;
         public bool IsValid() => this != null;
+        public object GetObject() => gameObject;
+        public bool Ignore() => false;
     }
 }

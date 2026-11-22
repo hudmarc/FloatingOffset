@@ -27,14 +27,8 @@ namespace FloatingOffset.Runtime
             var new_offset = new Vector3d(msg.OffsetX, msg.OffsetY, msg.OffsetZ);
             if (logging)
                 Debug.Log($"({InstanceFinder.TimeManager.Tick}) OFFSET CLIENT: [Local Scene]\n{localOffsetState.current_offset}->{new_offset} ]");
-            if (offsettableRegistry.GetOffsettablesInScene(msg.ViewNob.gameObject.scene, out var offsettablesInScene))
-            {
-                offsetter.Offset(localOffsetState.current_offset, new_offset, msg.ViewNob.gameObject.scene, offsettablesInScene);
-            }
-            else
-            {
-                offsetter.Offset(localOffsetState.current_offset, new_offset, msg.ViewNob.gameObject.scene);
-            }
+
+            offsetter.Offset(localOffsetState.current_offset, new_offset, msg.ViewNob.gameObject.scene, offsettableRegistry);
 
             localOffsetState.current_offset = new_offset;
         }

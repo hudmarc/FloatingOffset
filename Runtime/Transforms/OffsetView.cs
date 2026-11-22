@@ -30,7 +30,7 @@ namespace FloatingOffset.Runtime
 
         void Start()
         {
-            if(manager.IsServerActive())
+            if (manager.IsServerActive())
                 OnOffsetProcessorStateChange(true);
         }
 
@@ -84,7 +84,7 @@ namespace FloatingOffset.Runtime
         /// <param name="position"></param>
         public void TeleportTo(Vector3d position) => OffsetUtils.TeleportTo(this, position);
         Vector3d IOffsetObject<Scene>.GetEnginePosition() => transform.position.ToVector3d();
-        Scene IOffsetObject<Scene>.GetSceneKey() => gameObject.scene;
+        public Scene GetSceneKey() => gameObject.scene;
         void IOffsetObject<Scene>.Destroy() => Destroy(gameObject);
         void IOffsetObject<Scene>.SetEnginePosition(Vector3d position) => transform.position = position.ToVector3();
         void IOffsetObject<Scene>.OnPreSceneTransfer() => OnPreSceneTransfer?.Invoke();
@@ -92,5 +92,7 @@ namespace FloatingOffset.Runtime
         bool IOffsetObject<Scene>.IsPlayer() => IsPlayer;
         public bool IsValid() => registered;
         public string GetName() => gameObject.name;
+        public object GetObject() => gameObject;
+        public bool Ignore() => false;
     }
 }

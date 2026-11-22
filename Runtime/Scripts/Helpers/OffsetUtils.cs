@@ -84,9 +84,11 @@ namespace FloatingOffset.Runtime
 
             return RealToUnity(realPosition, OffsetBehaviour.manager.GetLocalOffset(scene));
         }
-        
+
         /// <summary>
         /// Moved to Helpers.cs as an extension method on Vector3d. This call signature will be removed from OffsetUtils.
+        /// You may call the extension as follows:
+        /// <code>(your_vector).ToVector3d</code>
         /// </summary>
         /// <param name="vector"></param>
         /// <returns></returns>
@@ -97,6 +99,8 @@ namespace FloatingOffset.Runtime
 
         /// <summary>
         /// Moved to Helpers.cs as an extension method on Vector3d. This call signature will be removed from OffsetUtils.
+        /// You may call the extension as follows:
+        /// <code>(your_vector).ToVector3</code>
         /// </summary>
         /// <param name="vector"></param>
         /// <returns></returns>

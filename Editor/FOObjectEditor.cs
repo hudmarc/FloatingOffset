@@ -93,7 +93,7 @@ namespace FloatingOffset.Editor
                 }
 
                 sceneOffset = OffsetBehaviour.manager.GetLocalOffset(t.gameObject.scene);
-                Vector3d position = sceneOffset + OffsetUtils.ToVector3d(t.position);
+                Vector3d position = sceneOffset + (t.position).ToVector3d();
 
                 if (lastTargetId != t.GetInstanceID())
                 {

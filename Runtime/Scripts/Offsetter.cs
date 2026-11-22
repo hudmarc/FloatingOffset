@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,19 +15,23 @@ namespace FloatingOffset.Runtime
         /// <param name="new_offset"></param>
         /// <param name="scene"></param>
         /// <param name="offsettables"></param>
-        public void Offset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables = null)
+        public void Offset(Vector3d old_offset, Vector3d new_offset, Scene scene, OffsettableRegistry registry)
         {
-            OnOffset(old_offset, new_offset, scene, offsettables); //Calls MoveRootTransforms internally
+            OnOffset(old_offset, new_offset, scene, registry); //Calls MoveRootTransforms internally
         }
-        private void MoveRootTransforms(Vector3 offset, GameObject[] objects)
+        private void MoveRootTransforms(Vector3 difference, GameObject[] objects, Vector3d old_offset, Vector3d new_offset, Scene scene, OffsettableRegistry registry)
         {
             foreach (GameObject g in objects)
             {
-                if (g.GetComponent<IgnoreOffset>() == null)
-                    g.transform.position += offset;
+                registry.DoPreCallbacks(g, old_offset, new_offset, scene);
+
+                if (!registry.ShouldIgnore(g))
+                    g.transform.position += difference;
+                    
+                registry.DoCallbacks(g, old_offset, new_offset, scene);
             }
         }
-        protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, ReadOnlyCollection<IOffsettable<Scene>> offsettables)
+        protected virtual void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene, OffsettableRegistry registry)
         {
             var objects = scene.GetRootGameObjects(); //TODO: Could this be a sorted cache that is refreshed every few frames?
             // i.e. first 'n' objects are Offsettable, last k objects are IgnoreOffset
@@ -37,26 +39,18 @@ namespace FloatingOffset.Runtime
             Vector3d real_difference = old_offset - new_offset;
             Vector3 difference = real_difference.ToVector3();
 
-            if (offsettables != null)
-                for (int i = 0; i < offsettables.Count; i++)
-                {
-                    if (offsettables[i].GetSceneKey() == scene)
-                        offsettables[i].OnPreOffset(old_offset, new_offset, scene);
-                }
-
-            MoveRootTransforms(difference, objects);
+            MoveRootTransforms(difference, objects, old_offset, new_offset, scene, registry);
 
             Vector3 remainder = (real_difference - difference.ToVector3d()).ToVector3();
 
             if (remainder.sqrMagnitude > 0.0f)
-                MoveRootTransforms(remainder, objects);
+                MoveRootTransforms(remainder, objects, old_offset, new_offset, scene, registry);
 
-            if (offsettables != null)
-                for (int i = 0; i < offsettables.Count; i++)
-                {
-                    if (offsettables[i].GetSceneKey() == scene)
-                        offsettables[i].OnOffset(old_offset, new_offset, scene);
-                }
+
+            foreach (GameObject g in objects)
+            {
+                registry.DoPostCallbacks(g, old_offset, new_offset, scene);
+            }
         }
     }
 }

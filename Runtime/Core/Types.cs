@@ -35,7 +35,7 @@ namespace FloatingOffset.Runtime
         /// IOffsetObject is the generic form of the OffsetView used in the core.
         /// </summary>
         /// <typeparam name="TSceneKey"></typeparam>
-        public interface IOffsetObject<TSceneKey>
+        public interface IOffsetObject<TSceneKey> : ISceneKeyedObject<TSceneKey>
         {
             /// <summary>
             /// The local scene position (converted from Vector3 into Vector3d) of this offset object.
@@ -48,47 +48,105 @@ namespace FloatingOffset.Runtime
             /// <returns></returns>
             void SetEnginePosition(Vector3d position);
             /// <summary>
-            /// The key of the scene this offset object resides in.
+            /// Destroys this OffsetObject in the target engine
             /// </summary>
-            /// <returns></returns>
-            TSceneKey GetSceneKey();
-            /// <summary>
-            /// Whether this OffsetView is valid (i.e. not destroyed)
-            /// </summary>
-            /// <returns></returns>
-            bool IsValid();
             void Destroy();
+            /// <summary>
+            /// Called right before this object will be transferred to another scene.
+            /// </summary>
             void OnPreSceneTransfer();
+            /// <summary>
+            /// Called when this object has been transferred to another scene.
+            /// </summary>
             void OnSceneTransfer();
+            /// <summary>
+            /// Is this View a player? Used to determine which View will be the client's local view.
+            /// </summary>
+            /// <returns></returns>
             bool IsPlayer();
+            /// <summary>
+            /// A friendly display name to show for this object (useful for debugging)
+            /// </summary>
+            /// <returns></returns>
             string GetName();
         }
-        public interface IOffsettable<TSceneKey>
+        /// <summary>
+        /// An Offsettable listens to changes in its scene from the Offset system.
+        /// </summary>
+        /// <typeparam name="TSceneKey"></typeparam>
+        [Obsolete("Prefer to use ISceneKeyedObject<TSceneKey>. Use IPreSceneOffsetListener<TSceneKey>, ISceneOffsetListener<TSceneKey> individually for fine-grained callback control.")]
+        public interface IOffsettable<TSceneKey> : IPreSceneOffsetListener<TSceneKey>, ISceneOffsetListener<TSceneKey> { }
+        /// <summary>
+        /// Base interface for all objects which are keyed according to their current scene.
+        /// </summary>
+        /// <typeparam name="TSceneKey"></typeparam>
+        public interface ISceneKeyedObject<TSceneKey>
         {
-            /// <summary>
-            /// Called when this offsettable's scene is offset.
-            /// </summary>
-            /// <param name="old_offset"></param>
-            /// <param name="new_offset"></param>
-            /// <param name="scene"></param>
-            void OnOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey scene);
-            /// <summary>
-            /// Called before this offsettable's scene is offset.
-            /// </summary>
-            /// <param name="old_offset"></param>
-            /// <param name="new_offset"></param>
-            /// <param name="scene"></param>
-            void OnPreOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey scene);
             /// <summary>
             /// The key of the scene this offsettable object resides in.
             /// </summary>
             /// <returns></returns>
             TSceneKey GetSceneKey();
+
+            /// <summary>
+            /// The runtime object, used for keying.
+            /// </summary>
+            /// <returns></returns>
+            object GetObject();
+
             /// <summary>
             /// Returns true if the game object associated with this offsettable exists, otherwise false.
             /// </summary>
             /// <returns></returns>
             bool IsValid();
+            /// <summary>
+            /// Should this object be ignored in offset calculations?
+            /// </summary>
+            /// <returns></returns>
+            bool Ignore();
+        }
+        /// <summary>
+        /// Exposes listeners for OnPreOffset which is called on subscribed objects in a scene about to be offset.
+        /// </summary>
+        /// <typeparam name="TSceneKey"></typeparam>
+        public interface IPreSceneOffsetListener<TSceneKey> : ISceneKeyedObject<TSceneKey>
+        {
+            /// <summary>
+            /// Called before this offsettable's scene is offset.
+            /// </summary>
+            /// <param name="old_offset">The offset of the object's current scene (The previous scene)</param>
+            /// <param name="new_offset">The offset of the destination scene (The scene the object will move into)</param>
+            /// <param name="destination">The scene the object will move into</param>
+            void OnPreOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey destination);
+
+        }
+        /// <summary>
+        /// Exposes listeners for OnPreOffset which is called on subscribed objects in a scene that has been offset.
+        /// </summary>
+        /// <typeparam name="TSceneKey"></typeparam>
+        public interface ISceneOffsetListener<TSceneKey> : ISceneKeyedObject<TSceneKey>
+        {
+            /// <summary>
+            /// Called when this offsettable's scene is offset.
+            /// </summary>
+            /// <param name="old_offset">The offset of the scene the object is moving from</param>
+            /// <param name="new_offset">The offset of the scene the object is moving to</param>
+            /// <param name="destination">The scene the object is moving into</param>
+            void OnOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey destination);
+        }
+        /// <summary>
+        /// Exposes listeners for OnPreOffset which is called on subscribed objects in a scene after it has been offset.
+        /// </summary>
+        /// <typeparam name="TSceneKey"></typeparam>
+        public interface IPostSceneOffsetListener<TSceneKey> : ISceneKeyedObject<TSceneKey>
+        {
+            /// <summary>
+            /// Called after this offsettable's scene is offset.
+            /// </summary>
+            /// <param name="old_offset">The offset of the object's previous scene</param>
+            /// <param name="new_offset">The offset of the object's now current scene (the destination scene)</param>
+            /// <param name="destination">The scene the object has been moved into</param>
+            void OnPostOffset(Vector3d old_offset, Vector3d new_offset, TSceneKey destination);
         }
         public interface IOffsetHandler<TSceneKey>
         {

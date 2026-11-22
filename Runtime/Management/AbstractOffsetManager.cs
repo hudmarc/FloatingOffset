@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -71,13 +70,14 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="scene"></param>
-        public abstract void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene);
+        public abstract void RegisterKeyed(ISceneKeyedObject<Scene> offsettable);
         /// <summary>
         /// Unregisters the given offsettable from the given scene.
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="scene"></param>
-        public abstract void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene);
+        public abstract void UnregisterKeyed(ISceneKeyedObject<Scene> offsettable);
+        
         /// <summary>
         /// Counts how many offsettables are registered to this Manager.
         /// </summary>

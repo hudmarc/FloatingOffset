@@ -21,7 +21,7 @@ namespace FloatingOffset.Editor
                 EditorGUILayout.BeginHorizontal("box");
                 if (GUILayout.Button("Anchor Here"))
                 {
-                    anchor.SetRealPosition(OffsetUtils.ToVector3d(anchor.transform.position));
+                    anchor.SetRealPosition(anchor.transform.position.ToVector3d());
                 }
                 if (GUILayout.Button("Reset Anchor"))
                 {

@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using FloatingOffset.Runtime.Types;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,8 +8,12 @@ namespace FloatingOffset.Runtime
 {
     public class OffsettableRegistry
     {
-        private List<IOffsettable<Scene>> temp = new List<IOffsettable<Scene>>();
-        protected List<IOffsettable<Scene>> offsettables = new List<IOffsettable<Scene>>();
+        private Dictionary<object, ISceneKeyedObject<Scene>> offsettables = new Dictionary<object, ISceneKeyedObject<Scene>>();
+        private Dictionary<object, IPreSceneOffsetListener<Scene>> pre_listeners = new Dictionary<object, IPreSceneOffsetListener<Scene>>();
+        private Dictionary<object, ISceneOffsetListener<Scene>> listeners = new Dictionary<object, ISceneOffsetListener<Scene>>();
+        private Dictionary<object, IPostSceneOffsetListener<Scene>> post_listeners = new Dictionary<object, IPostSceneOffsetListener<Scene>>();
+
+        private HashSet<object> ignore_list = new HashSet<object>();
 
         public OffsettableRegistry(bool logging)
         {
@@ -21,47 +23,61 @@ namespace FloatingOffset.Runtime
 
         public int Count => offsettables.Count;
 
-        public void RegisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettables.Add(offsettable);
+        public void RegisterOffsettable(ISceneKeyedObject<Scene> keyed_object)
+        {
+            offsettables.Add(keyed_object.GetObject(), keyed_object);
 
-        public void UnregisterOffsettable(IOffsettable<Scene> offsettable, Scene scene) => offsettables.Remove(offsettable);
+            // type dance
 
+            var pre_listener = keyed_object as IPreSceneOffsetListener<Scene>;
+            if (pre_listener != null)
+                pre_listeners.Add(pre_listener.GetObject(), pre_listener);
+
+            var listener = keyed_object as ISceneOffsetListener<Scene>;
+            if (listener != null)
+                listeners.Add(pre_listener.GetObject(), listener);
+
+            var post_listener = keyed_object as IPostSceneOffsetListener<Scene>;
+            if (post_listener != null)
+                post_listeners.Add(pre_listener.GetObject(), post_listener);
+
+            if (keyed_object.Ignore())
+                ignore_list.Add(keyed_object.GetObject());
+        }
+
+        public void UnregisterOffsettable(ISceneKeyedObject<Scene> keyed_object)
+        {
+            offsettables.Remove(keyed_object.GetObject());
+            pre_listeners.Remove(keyed_object.GetObject());
+            listeners.Remove(keyed_object.GetObject());
+            post_listeners.Remove(keyed_object.GetObject());
+            ignore_list.Remove(keyed_object);
+        }
         public int OffsettableCount() => offsettables.Count;
 
-        public bool GetOffsettablesInScene(Scene scene, out ReadOnlyCollection<IOffsettable<Scene>> found)
+        public void DoPreCallbacks(object obj, Vector3d old_offset, Vector3d new_offset, Scene destination)
         {
-            while (offsettables.Count > 0 && offsettables[offsettables.Count - 1] == null)
-            {
-                offsettables.RemoveAt(offsettables.Count - 1);
-            }
-            temp.Clear();
+            if (pre_listeners.TryGetValue(obj, out var listener))
+                listener.OnPreOffset(old_offset, new_offset, destination);
+        }
 
-            for (int i = 0; i < offsettables.Count; i++)
-            {
-                var offsettable = offsettables[i];
+        public void DoCallbacks(object obj, Vector3d old_offset, Vector3d new_offset, Scene destination)
+        {
+            if (listeners.TryGetValue(obj, out var listener))
+                listener.OnOffset(old_offset, new_offset, destination);
+        }
 
-                if (offsettable is UnityEngine.Object unityObj && unityObj == null)
-                {
-                    offsettables.RemoveAt(i);
-                    continue;
-                }
+        public void DoPostCallbacks(object obj, Vector3d old_offset, Vector3d new_offset, Scene destination)
+        {
+            if (post_listeners.TryGetValue(obj, out var listener))
+                listener.OnPostOffset(old_offset, new_offset, destination);
+        }
 
-                if (!offsettable.IsValid())
-                {
-                    offsettables.RemoveAt(i);
-                    continue;
-                }
+        public bool ShouldIgnore(object obj) => ignore_list.Contains(obj);
 
-                if (offsettable.GetSceneKey() == scene)
-                {
-                    temp.Add(offsettable);
-                }
-            }
-
-            found = temp.AsReadOnly();
-
-            if (temp.Count < 1)
-                return false;
-            return true;
+        public bool TryGetRegistered(GameObject obj, out ISceneKeyedObject<Scene> keyed_object)
+        {
+            return offsettables.TryGetValue(obj, out keyed_object);
         }
     }
 }

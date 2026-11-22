@@ -8,7 +8,7 @@ namespace FloatingOffset.Runtime
     /// Offset Anchors ensure that the object they are attached to is always at the exact position specified in the OffsetAnchor's target position.<br/>
     /// This also means that they may exist in more than one scene at a time on the server, unless they are paired with an OffsetView
     /// </summary>
-    public class OffsetAnchor : OffsetBehaviour, IOffsettable<Scene>
+    public class OffsetAnchor : OffsetBehaviour, IPreSceneOffsetListener<Scene>, ISceneOffsetListener<Scene>
     {
         [field: SerializeField]
         public SerializableVector3d realPosition { get; private set; }
@@ -31,7 +31,7 @@ namespace FloatingOffset.Runtime
                 return;
 
             scene = gameObject.scene;
-            manager.RegisterOffsettable(this, this.GetSceneKey());
+            manager.RegisterKeyed(this);
 
 
             Vector3d current_scene_offset = manager.GetLocalOffset(scene);
@@ -41,7 +41,7 @@ namespace FloatingOffset.Runtime
         {
             if (manager.IsLogging())
                 Debug.Log($"Destroyed OffsetAnchor on {gameObject.name}");
-            manager.UnregisterOffsettable(this, this.GetSceneKey());
+            manager.UnregisterKeyed(this);
         }
         public void OnOffset(Vector3d old_offset, Vector3d new_offset, Scene scene)
         {
@@ -63,6 +63,10 @@ namespace FloatingOffset.Runtime
 
         public Scene GetSceneKey() => scene;
         public bool IsValid() => this != null;
-        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene){ }
+        public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene) { }
+
+        public object GetObject() => gameObject;
+
+        public bool Ignore() => false;
     }
 }

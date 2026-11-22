@@ -231,7 +231,7 @@ namespace FloatingOffset.Runtime
             }
 
 
-            MarkTime(4); // add views to hash grid: 0.986233ms avg (close) add views to hash grid: 0.753065ms avg (spread)
+            MarkTime(4); // add views to hash grid
 
             // Populate union-find using hash grid
 
@@ -243,7 +243,7 @@ namespace FloatingOffset.Runtime
                     union.Union(representative, i);
                 }
             }
-            MarkTime(5); //populate union-find: 1.0777933ms avg (close) 0.62602167ms avg (spread)
+            MarkTime(5); //populate union-find
 
             // calculate union sums
 
@@ -278,7 +278,8 @@ namespace FloatingOffset.Runtime
                 int sceneIdx = view_scene_indexes[i];
                 int count = union_counts[rep];
 
-                if (scene_champions[sceneIdx].count < count)
+                if (scene_champions[sceneIdx].count < count) //TODO: Augment this with GetNeighbourhoodRadius(), 
+                // we already know the centroid because we calculate union_sums in the previous loop.
                 {
                     scene_champions[sceneIdx] = (rep, count, i);
                 }
@@ -441,21 +442,29 @@ namespace FloatingOffset.Runtime
 
             Vector3d origin_offset = scenes.HasScene(origin) ? scenes.GetOffset(origin) : Vector3d.zero; //teleports from zero-offset if teleporting from an unknown scene
 
-            bool request = RequestScene(source, real_position, out int found, target =>
-                {
-                    // this only runs if we had to request a new scene and load it
-                    Transfer(offsetObject, origin, target);
-                    Vector3d target_offset = scenes.GetOffset(target);
-                    offsetObject.SetEnginePosition(real_position - target_offset);
-                    handler.UpdateOffset(scenes.GetScene(target));
-                });
+            TSceneKey destination_scene = GetNearbyScene(real_position);
+
+            bool request = scenes.HasScene(destination_scene);
+
+            if (request == false)
+            {
+                request = RequestScene(source, real_position, out int found, target =>
+                    {
+                        // this only runs if we had to request a new scene and load it
+                        Transfer(offsetObject, origin, target);
+                        Vector3d target_offset = scenes.GetOffset(target);
+                        offsetObject.SetEnginePosition(real_position - target_offset);
+                        handler.UpdateOffset(scenes.GetScene(target));
+                    });
+                if (request)
+                    destination_scene = scenes.GetSceneKeyAt(found);
+            }
             if (request)
             {
-                var target = scenes.GetSceneKeyAt(found);
                 //this runs if RequestScene immediately finds an empty scene
-                Transfer(offsetObject, origin, target);
-                offsetObject.SetEnginePosition(real_position - origin_offset);
-                handler.UpdateOffset(scenes.GetSceneAt(found));
+                Transfer(offsetObject, origin, destination_scene);
+                offsetObject.SetEnginePosition(real_position - origin_offset); // Updates the position to match the original offset of the scene
+                handler.UpdateOffset(scenes.GetScene(destination_scene)); // Offsets the scene
             }
         }
         /// <summary>
