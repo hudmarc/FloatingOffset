@@ -31,7 +31,7 @@ This is currently the only open-source Unity package that can do this while main
 
 At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetProcessor` contains the bulk of the implementation.
 
-### Is this package fast enough for my game? I want to host my small friend group of 2000 people on one world on my server.
+### Is this package fast enough for my game? I want to host my small friend group of 4000 people on one world on my server.
 
 Assuming a 4ms frame budget and a midrange server (in other words, the same cost as the default Unity Physics loop) yes.
 
