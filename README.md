@@ -31,7 +31,7 @@ This is currently the only open-source Unity package that can do this while main
 
 At the time of writing, this package is the only open source origin-shifting/world rebasing solution that supports *full server authority* in a multiplayer environment. Other solutions generally require client-side authority and physics (by storing offsets client-side), but this package uses a fast server-side neighborhood clustering algorithm to ensure all players that can interact exist in the same scene on the server. If you want to learn more, the main `Process` loop in `OffsetProcessor` contains the bulk of the implementation.
 
-### Is this package fast enough for my game? I want to host my small friend group of 2000 people on one world on my server.
+### Is this package fast enough for my game? I want to host my small friend group of 4000 people on one world on my server.
 
 Assuming a 4ms frame budget and a midrange server (in other words, the same cost as the default Unity Physics loop) yes.
 
@@ -39,22 +39,22 @@ Assuming a 4ms frame budget and a midrange server (in other words, the same cost
 
 > If all players are clustered in one spot (all players in the same scene, generally best case)
 ```
-MultipleViewsSameClientStressTestCloseTogether (11.725s)
+MultipleViewsSameClientStressTestCloseTogether (20.251s)
 ---
-Stopped at 2000 players with simulated frametime 4ms.
-Average: 1.94433333333333ms
-Worst: 4.05ms @ 2000 players
-Best: 0.116666666666667ms @ 60 players
+Stopped at 4440 players with simulated frametime 2ms.
+Average: 1.51111111111111ms
+Worst: 3.06666666666667ms @ 4180 players
+Best: 0.0333333333333333ms @ 40 players
 ```
 
 > If players are all far from each other (1 scene/player, worst case)
 ```
-MultipleViewsSameClientStressTestSpreadOut (8.159s)
+MultipleViewsSameClientStressTestSpreadOut (19.942s)
 ---
-Stopped at 1360 players with simulated frametime 4ms.
-Average: 1.98676470588235ms
-Worst: 4.08333333333333ms @ 1360 players
-Best: 0.116666666666667ms @ 40 players
+Stopped at 3480 players with simulated frametime 4ms.
+Average: 1.90095785440613ms
+Worst: 4ms @ 3480 players
+Best: 0.05ms @ 40 players
 ```
 
 > Note: These benchmarks were using mock classes, not Unity libraries, so YMMV. If you manage to reach this many players on an actual Unity game with this package, please let me know!
