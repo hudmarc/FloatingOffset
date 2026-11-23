@@ -11,8 +11,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestZeroPositiveUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = (OffsetUtils.ToVector3d(Vector3.zero));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = Vector3d.zero;
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -30,8 +30,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestZeroNegativeUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(Vector3.zero);
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = Vector3.zero.ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -41,8 +41,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMaxPositiveUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER).ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -52,8 +52,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMaxNegativeUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER).ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -63,8 +63,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMinPositiveUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER).ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -74,8 +74,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMinNegativeUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER).ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(realPosition, OffsetUtils.UnityToReal(unityPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -87,8 +87,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestZeroPositiveUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = OffsetUtils.ToVector3d(Vector3.zero);
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = Vector3.zero.ToVector3d();
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -98,8 +98,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestZeroNegativeUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(Vector3.zero);
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = Vector3d.zero;
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -109,8 +109,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMaxPositiveUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3d(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER);
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -120,8 +120,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMaxNegativeUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3d(HUGE_NUMBER, HUGE_NUMBER, HUGE_NUMBER);
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -131,8 +131,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMinPositiveUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(10000, 10000, 10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3d(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER);
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);
@@ -142,8 +142,8 @@ namespace FloatingOffset.Editor.Tests
         public void TestMinNegativeUnityRealToUnity()
         {
             Vector3 unityPosition = new Vector3(-10000, -10000, -10000);
-            Vector3d offset = OffsetUtils.ToVector3d(new Vector3(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER));
-            Vector3d realPosition = OffsetUtils.ToVector3d(unityPosition) + offset;
+            Vector3d offset = new Vector3d(-HUGE_NUMBER, -HUGE_NUMBER, -HUGE_NUMBER);
+            Vector3d realPosition = unityPosition.ToVector3d() + offset;
 
             Assert.AreEqual(unityPosition, OffsetUtils.RealToUnity(realPosition, offset));
             Assert.AreNotEqual(realPosition, offset);

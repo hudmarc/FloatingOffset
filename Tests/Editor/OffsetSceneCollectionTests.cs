@@ -123,8 +123,8 @@ namespace FloatingOffset.Editor.Tests
             _enginePosition = Vector3.zero;
         }
 
-        public Vector3d GetEnginePosition() => OffsetUtils.ToVector3d(_enginePosition);
-        public void SetEnginePosition(Vector3d position) => _enginePosition = OffsetUtils.ToVector3(position);
+        public Vector3d GetEnginePosition() => _enginePosition.ToVector3d();
+        public void SetEnginePosition(Vector3d position) => _enginePosition = position.ToVector3();
 
         public int GetSceneKey() => _sceneKey;
         public void SetSceneKey(int key) => _sceneKey = key;
@@ -160,6 +160,16 @@ namespace FloatingOffset.Editor.Tests
         public string GetName()
         {
             return "Test";
+        }
+
+        public object GetObject()
+        {
+            return this;
+        }
+
+        public bool Ignore()
+        {
+            return false;
         }
     }
 

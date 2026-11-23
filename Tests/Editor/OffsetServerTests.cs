@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FloatingOffset.Runtime;
 using NUnit.Framework;
 using UnityEngine;
@@ -177,96 +178,152 @@ namespace FloatingOffset.Editor.Tests
         [Test]
         public void MultipleViewsSameClientStressTestCloseTogether()
         {
-            int count = 1;
-
-            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-
-            double worst = 0;
-            int worst_count = 0;
-            int best_count = 0;
-            double best = int.MaxValue;
-            double sum = 0;
-
-            OffsetProcessor<int> server = null;
-
-            while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 20000) //300 = 60 * 4. Assume 4ms budget per simulated frame. Timeout @ 20s.
-            {
-                count++;
-                sw.Restart();
-                server = StressTest(count * 20);
-                sw.Stop();
-                double processing_time = sw.ElapsedMilliseconds;
-                if (processing_time < best)
-                {
-                    best = processing_time;
-                    best_count = count;
-                }
-                if (processing_time > worst)
-                {
-                    worst = processing_time;
-                    worst_count = count;
-                }
-                sum += processing_time;
-            }
-            Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
-
-            Debug.Log("--- DETAILED PROFILE ---");
-            for (int i = 0; i < server.subloop_count; i++)
-            {
-                var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
-            }
+            RunStressTestSuite(
+                label: "CloseTogether",
+                spread: 1,
+                maxSumMs: 40000
+            );
         }
 
         [Test]
         public void MultipleViewsSameClientStressTestSpreadOut()
         {
+            RunStressTestSuite(
+                label: "SpreadOut",
+                spread: 20000,
+                maxSumMs: 40000
+            );
+        }
+
+        private void RunStressTestSuite(string label, int spread, double maxSumMs)
+        {
+            const double frameBudgetMs = 4.0;
+
             int count = 1;
+            var lastThreeFrames = new Queue<double>(3);
+            var frameTimes = new List<double>(60);
 
-            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-
-            double worst = 0;
-            int worst_count = 0;
-            int best_count = 0;
-            double best = int.MaxValue;
-            double sum = 0;
+            double worstFrame = 0;
+            int worstCount = 0;
+            int worstFrameIndex = -1;
+            double bestFrame = double.MaxValue;
+            int bestCount = 0;
+            double sumAllFrames = 0;
+            int totalFramesRecorded = 0;
+            int spikeCount = 0;
+            int skippedWarmupSpikes = 0;
 
             OffsetProcessor<int> server = null;
 
-            while (sw.ElapsedMilliseconds < 240 && count < 1000 && sum < 40000) //300 = 60 * 4. Assume 4ms budget per simulated frame.
+            double GetLastThreeAverage()
+            {
+                if (lastThreeFrames.Count == 0)
+                    return 0.0;
+
+                double total = 0.0;
+                foreach (double t in lastThreeFrames)
+                    total += t;
+
+                return total / lastThreeFrames.Count;
+            }
+
+            while (GetLastThreeAverage() < frameBudgetMs && count < 1000 && sumAllFrames < maxSumMs)
             {
                 count++;
-                sw.Restart();
-                server = StressTest(count * 20, 20000);
-                sw.Stop();
-                double processing_time = sw.ElapsedMilliseconds;
-                if (processing_time < best)
-                {
-                    best = processing_time;
-                    best_count = count;
-                }
-                if (processing_time > worst)
-                {
-                    worst = processing_time;
-                    worst_count = count;
-                }
-                sum += processing_time;
-            }
-            Debug.Log($"Stopped at {count * 20} players with simulated frametime {sw.ElapsedMilliseconds / 60}ms.\nAverage: {(sum / count) / 60f}ms\nWorst: {worst / 60f}ms @ {worst_count * 20} players\nBest: {best / 60f}ms @ {best_count * 20} players");
+                int viewsCount = count * 20;
 
-            Debug.Log("--- DETAILED PROFILE ---");
-            for (int i = 0; i < server.subloop_count; i++)
+                server = spread == 1
+                    ? StressTest(viewsCount, out frameTimes)
+                    : StressTest(viewsCount, spread, out frameTimes);
+
+                for (int f = 0; f < frameTimes.Count; f++)
+                {
+                    double frameMs = frameTimes[f];
+                    double priorAvg = GetLastThreeAverage();
+
+                    sumAllFrames += frameMs;
+                    totalFramesRecorded++;
+
+                    if (frameMs < bestFrame)
+                    {
+                        bestFrame = frameMs;
+                        bestCount = viewsCount;
+                    }
+                    if (frameMs > worstFrame)
+                    {
+                        worstFrame = frameMs;
+                        worstCount = viewsCount;
+                        worstFrameIndex = f;
+                    }
+
+                    if (frameMs > frameBudgetMs * 2)
+                    {
+                        if (f == 0)
+                        {
+                            skippedWarmupSpikes++;
+                        }
+                        else
+                        {
+                            spikeCount++;
+                            Debug.LogWarning(
+                                $"[{label}] SPIKE #{spikeCount} @ {viewsCount} players (frame {f}): " +
+                                $"{frameMs:F3}ms (prior 3-frame avg: {priorAvg:F3}ms) Below avg, in ms"
+                            );
+
+                            if (server != null && server.subloop_count > 0)
+                            {
+                                var sb = new System.Text.StringBuilder();
+                                for (int i = 0; i < server.subloop_count; i++)
+                                {
+                                    if (i > 0) sb.Append(" | ");
+                                    var runtime = server.averageRuntime(i);
+                                    sb.Append($"{runtime.Item1}: {runtime.Item2:0.####}");
+                                }
+
+                                Debug.Log(sb.ToString());
+                            }
+                        }
+                    }
+
+                    if (lastThreeFrames.Count == 3)
+                        lastThreeFrames.Dequeue();
+                    lastThreeFrames.Enqueue(frameMs);
+                }
+            }
+
+            double finalLastThreeAvg = GetLastThreeAverage();
+            double overallAvg = totalFramesRecorded > 0 ? sumAllFrames / totalFramesRecorded : 0.0;
+
+            Debug.Log(
+                $"[{label}] Stopped @ {count * 20} players with last-3-frame avg {finalLastThreeAvg:F3}ms.\n" +
+                $"Average (all frames): {overallAvg:F3}ms\n" +
+                $"Worst: {worstFrame:F3}ms @ {worstCount} players (frame {worstFrameIndex})\n" +
+                $"Best: {bestFrame:F3}ms @ {bestCount} players\n" +
+                $"Spikes (> {frameBudgetMs:F1}ms) printed: {spikeCount}\n" +
+                $"Skipped printing {skippedWarmupSpikes} warmup frames"
+            );
+
+            if (server != null)
             {
-                var runtime = server.averageRuntime(i);
-                Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+                Debug.Log($"--- DETAILED PROFILE (RUN-AVG @ {count * 20} players) ---");
+                for (int i = 0; i < server.subloop_count; i++)
+                {
+                    var runtime = server.averageRuntime(i);
+                    Debug.Log($"{runtime.Item1}: {runtime.Item2}ms avg");
+                }
             }
         }
+        OffsetProcessor<int> StressTest(int VIEWS, out List<double> frameTimes)
+        {
+            return StressTest(VIEWS, 1, out frameTimes);
+        }
 
-        OffsetProcessor<int> StressTest(int VIEWS, int SPREAD = 1)
+        OffsetProcessor<int> StressTest(int VIEWS, int SPREAD, out List<double> frameTimes)
         {
             var mock_handler = new MockOffsetHandler(INITIAL_SCENE_KEY);
             var server = new OffsetProcessor<int>(mock_handler, REBASE_CRITERIA, VIEWS);
-
+            var frameSw = new System.Diagnostics.Stopwatch();
+            frameTimes = new List<double>(60);
 
             MockOffsetObject[] views = new MockOffsetObject[VIEWS];
             Vector3d[] targetPositions = new Vector3d[VIEWS];
@@ -285,6 +342,7 @@ namespace FloatingOffset.Editor.Tests
             {
                 moveAmount *= 1.2;
 
+                frameSw.Restart();
                 for (int i = 0; i < VIEWS; i++)
                 {
                     // Move them in different directions to ensure distinct spaces
@@ -296,17 +354,10 @@ namespace FloatingOffset.Editor.Tests
                 }
 
                 server.Process();
-
-                // for (int i = 0; i < VIEWS; i++)
-                // {
-                //     if (SPREAD == 1)
-                //     {
-                //         double error = Vector3d.Distance(mock_handler.RealPosition(views[i]), targetPositions[i]);
-                //         Assert.Less(error, 2.0, $"View {i} deviated from intended position. Error: {error}");
-                //     }
-
-                // }
+                frameSw.Stop();
+                frameTimes.Add(frameSw.Elapsed.TotalMilliseconds);
             }
+
             return server;
         }
 
