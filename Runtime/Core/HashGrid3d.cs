@@ -35,23 +35,23 @@ namespace FloatingOffset.Runtime
             this.max_neighbourhood_radius = max_neighbourhood_radius;
         }
         public static readonly Vector3d[] SEARCH_PATTERN = {
-        // Distance 0 (1 cell)
-        new Vector3d(0,0,0),
+    // d=0 center
+    new Vector3d(0,0,0),
 
-        // Distance 1 (6 face-neighbors)
-        new Vector3d(0,0,1),  new Vector3d(0,0,-1),
-        new Vector3d(0,1,0),  new Vector3d(0,-1,0),
-        new Vector3d(1,0,0),  new Vector3d(-1,0,0),
+    // d=1 face
+    new Vector3d(0,0,1),  new Vector3d(0,0,-1),
+    new Vector3d(0,1,0),  new Vector3d(0,-1,0),
+    new Vector3d(1,0,0),  new Vector3d(-1,0,0),
 
-        // Distance 1.414 / Sqrt(2) (12 edge-neighbors)
-        new Vector3d(0,1,1),  new Vector3d(0,1,-1),  new Vector3d(0,-1,1),  new Vector3d(0,-1,-1),
-        new Vector3d(1,0,1),  new Vector3d(1,0,-1),  new Vector3d(-1,0,1),  new Vector3d(-1,0,-1),
-        new Vector3d(1,1,0),  new Vector3d(1,1,-1),  new Vector3d(-1,1,0),  new Vector3d(-1,1,-1),
+    // d=sqrt(2) edge
+    new Vector3d(0,1,1),  new Vector3d(0,1,-1),  new Vector3d(0,-1,1),  new Vector3d(0,-1,-1),
+    new Vector3d(1,0,1),  new Vector3d(1,0,-1),  new Vector3d(-1,0,1),  new Vector3d(-1,0,-1),
+    new Vector3d(1,1,0),  new Vector3d(1,-1,0),  new Vector3d(-1,1,0),  new Vector3d(-1,-1,0),
 
-        // Distance 1.732 / Sqrt(3) (8 corner-neighbors)
-        new Vector3d(1,1,1),   new Vector3d(1,1,-1),   new Vector3d(1,-1,1),   new Vector3d(1,-1,-1),
-        new Vector3d(-1,1,1),  new Vector3d(-1,1,-1),  new Vector3d(-1,-1,1),  new Vector3d(-1,-1,-1),
-    };
+    // d=sqrt(3) corner
+    new Vector3d(1,1,1),   new Vector3d(1,1,-1),   new Vector3d(1,-1,1),   new Vector3d(1,-1,-1),
+    new Vector3d(-1,1,1),  new Vector3d(-1,1,-1),  new Vector3d(-1,-1,1),  new Vector3d(-1,-1,-1),
+};
 
         /// <summary>
         /// Get the count of unique grid squares with representatives.

@@ -72,7 +72,7 @@ namespace FloatingOffset.Runtime
                 unions[rootJ] = rootI; // Attach J's tree to I
             }
         }
-        public void Clear()
+        public void Reset()
         {
             for (int i = 0; i < unions.Length; i++)
             {

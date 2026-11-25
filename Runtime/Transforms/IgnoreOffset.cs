@@ -1,5 +1,4 @@
 using FloatingOffset.Runtime.Types;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace FloatingOffset.Runtime
@@ -11,16 +10,17 @@ namespace FloatingOffset.Runtime
     {
         void Start()
         {
-            manager.RegisterKeyed(this);
+            manager.RegisterKeyed(this, true);
         }
         void OnDestroy()
         {
             manager.UnregisterKeyed(this);
         }
-        public object GetObject() => gameObject;
+        public object GetEngineObject() => gameObject;
 
         public Scene GetSceneKey() => gameObject.scene;
         public bool IsValid() => this != null;
-        public bool Ignore() => true;
+
+        public string GetName() => gameObject.name;
     }
 }

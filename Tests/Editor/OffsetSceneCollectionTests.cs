@@ -162,7 +162,7 @@ namespace FloatingOffset.Editor.Tests
             return "Test";
         }
 
-        public object GetObject()
+        public object GetEngineObject()
         {
             return this;
         }

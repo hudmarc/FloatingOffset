@@ -20,7 +20,7 @@ namespace FloatingOffset.Runtime
 
         void Start()
         {
-            if (manager.IsServerActive())
+            if (manager.IsInitialized())
                 OnOffsetProcessorStateChange(true);
         }
 
@@ -65,8 +65,8 @@ namespace FloatingOffset.Runtime
         public bool IsValid() => this != null;
         public void OnPreOffset(Vector3d old_offset, Vector3d new_offset, Scene scene) { }
 
-        public object GetObject() => gameObject;
+        public object GetEngineObject() => gameObject;
 
-        public bool Ignore() => false;
+        public string GetName() => gameObject.name;
     }
 }

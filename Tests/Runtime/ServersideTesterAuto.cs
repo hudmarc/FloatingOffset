@@ -111,7 +111,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
+            Vector3d position = view.transform.position.ToVector3d();
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -147,7 +147,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
+            Vector3d position = view.transform.position.ToVector3d();
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -189,7 +189,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForFixedUpdate();
             }
 
-            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
+            Vector3d position = view.transform.position.ToVector3d();
 
             yield return new WaitForSeconds(2);
             Debug.Log("Starting test");
@@ -202,7 +202,7 @@ namespace FloatingOffset.Runtime
                 Debug.Log($"OFFSET: Count {i}");
                 Vector3 delta = new Vector3(val, val, val);
                 view.transform.position += delta;
-                position += OffsetUtils.ToVector3d(delta);
+                position += delta.ToVector3d();
 
                 if (i < 21 && (val * 2) > 0)
                     val *= 2;
@@ -250,7 +250,7 @@ namespace FloatingOffset.Runtime
                 yield return new WaitForSeconds(1);
             }
 
-            Vector3d position = OffsetUtils.ToVector3d(view.transform.position);
+            Vector3d position = view.transform.position.ToVector3d();
 
             yield return new WaitForSeconds(1);
             Debug.Log("Starting test");
@@ -262,7 +262,7 @@ namespace FloatingOffset.Runtime
             {
                 Vector3 delta = (i % 2 == 0 ? -1 : 1) * OFFSET_DISTANCE * Vector3.right;
                 view.transform.position += delta;
-                position += OffsetUtils.ToVector3d(delta);
+                position += delta.ToVector3d();
 
                 int desync_count = 0;
 
@@ -321,7 +321,7 @@ namespace FloatingOffset.Runtime
             Vector3d[] expectedPositions = new Vector3d[8];
             for (int i = 0; i < 8; i++)
             {
-                expectedPositions[i] = OffsetUtils.ToVector3d(views[i].transform.position);
+                expectedPositions[i] = views[i].transform.position.ToVector3d();
             }
 
             yield return new WaitForSeconds(2);
@@ -341,7 +341,7 @@ namespace FloatingOffset.Runtime
                 {
                     Vector3 delta = new Vector3(val, val, val);
                     currentView.transform.position += delta;
-                    expectedPositions[viewIndex] += OffsetUtils.ToVector3d(delta);
+                    expectedPositions[viewIndex] += delta.ToVector3d();
 
                     val *= 2;
 

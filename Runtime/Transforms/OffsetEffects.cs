@@ -26,7 +26,7 @@ namespace FloatingOffset.Runtime
 
         void Start()
         {
-            if (manager.IsServerActive())
+            if (manager.IsInitialized())
                 OnOffsetManagerInitialized(true);
         }
 
@@ -162,7 +162,7 @@ namespace FloatingOffset.Runtime
 
         public Scene GetSceneKey() => gameObject.scene;
         public bool IsValid() => this != null;
-        public object GetObject() => gameObject;
-        public bool Ignore() => false;
+        public object GetEngineObject() => gameObject;
+        public string GetName() => gameObject.name;
     }
 }

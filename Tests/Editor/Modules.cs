@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FloatingOffset.Runtime;
 using NUnit.Framework;
 using UnityEngine;
@@ -22,6 +23,20 @@ namespace FloatingOffset.Editor.Tests
             HashGrid test = NewGrid();
             Assert.NotNull(test);
             Assert.AreEqual(0, test.Count);
+        }
+
+        [Test]
+        public void HashGridSearchPatternIsUnitaryAndUnitCube()
+        {
+            HashGrid test = NewGrid();
+            Assert.IsTrue(HashGrid.SEARCH_PATTERN.Distinct().Count() == 27, "Hash Grid SEARCH PATTERN does not have 27 distinct entries");
+
+            foreach (var v in HashGrid.SEARCH_PATTERN)
+            {
+                Assert.IsTrue(v.x == 0 || Math.Abs(v.x) == 1, $"Vector {v} is not composed of 1's and 0's");
+                Assert.IsTrue(v.y == 0 || Math.Abs(v.y) == 1, $"Vector {v} is not composed of 1's and 0's");
+                Assert.IsTrue(v.z == 0 || Math.Abs(v.z) == 1, $"Vector {v} is not composed of 1's and 0's");
+            }
         }
 
         [Test]

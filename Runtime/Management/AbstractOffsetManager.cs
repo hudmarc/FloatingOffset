@@ -18,7 +18,7 @@ namespace FloatingOffset.Runtime
         /// Invoked on the server client after the OffsetProcessor and all its dependencies have been correctly initialized.
         /// Passes "true" if the OffsetProcessor was created (i.e. on networked clients) or "false" if no OffsetProcessor was created.
         /// </summary>
-        
+
         public static Action<bool> OnOffsetProcessorStateChange;
         public static OffsetManager Manager { get; private set; }
         protected static void RegisterManagerSingleton(OffsetManager manager) => OffsetManager.Manager = manager;
@@ -33,10 +33,15 @@ namespace FloatingOffset.Runtime
         /// <returns></returns>
         public abstract bool IsLogging();
         /// <summary>
-        /// Is this Manager's server active?
+        /// Is this Manager's server active? [Server Only]
         /// </summary>
         /// <returns></returns>
         public abstract bool IsServerActive();
+        /// <summary>
+        /// Is this Manager initialized? [Server/Client]
+        /// </summary>
+        /// <returns></returns>
+        public abstract bool IsInitialized();
         /// <summary>
         /// Is the given scene registered on this Manager?
         /// </summary>
@@ -70,14 +75,14 @@ namespace FloatingOffset.Runtime
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="scene"></param>
-        public abstract void RegisterKeyed(ISceneKeyedObject<Scene> offsettable);
+        public abstract void RegisterKeyed(ISceneKeyedObject<Scene> offsettable, bool ignore = false);
         /// <summary>
         /// Unregisters the given offsettable from the given scene.
         /// </summary>
         /// <param name="offsettable"></param>
         /// <param name="scene"></param>
         public abstract void UnregisterKeyed(ISceneKeyedObject<Scene> offsettable);
-        
+
         /// <summary>
         /// Counts how many offsettables are registered to this Manager.
         /// </summary>

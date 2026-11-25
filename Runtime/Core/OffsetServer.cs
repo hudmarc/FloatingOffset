@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using FloatingOffset.Runtime.Types;
 
 namespace FloatingOffset.Runtime
@@ -112,7 +111,7 @@ namespace FloatingOffset.Runtime
         private (int rep, int count, int winnerIndex)[] scene_champions = new (int, int, int)[8];
         private Stopwatch stopwatch = new Stopwatch();
         public (TimeSpan, int)[] process_loop_times = new (TimeSpan, int)[14];
-
+#if UNITY_EDITOR
         private string[] process_loops = {
         "clear grid & union",
         "prune views",
@@ -128,7 +127,19 @@ namespace FloatingOffset.Runtime
         "request scenes/transfers",
         "finalize offset updates",
         };
-        public int subloop_count => process_loops.Length;
+#endif
+
+        public int subloop_count => _subloop_count();
+        private int _subloop_count()
+        {
+#if UNITY_EDITOR
+            return process_loops.Length;
+#endif
+#if !UNITY_EDITOR
+    return 0;
+#endif
+        }
+
         // Tracks the current winning scene for a given root
         // Key: root | Value: (Winning Scene, Max Count, Representative View Index)
         Dictionary<int, SceneWinner> winners = new Dictionary<int, SceneWinner>();
@@ -163,11 +174,12 @@ namespace FloatingOffset.Runtime
         public void Process()
         {
             stopwatch.Restart();
-            union.Clear();
+            union.Reset();
             grid.Clear();
 
+#if UNITY_EDITOR
             MarkTime(0); // "clear grid & union"
-
+#endif
             int remove_count = 0;
 
             // Prune views scheduled for removal
@@ -185,9 +197,9 @@ namespace FloatingOffset.Runtime
             }
 
             views.RemoveRange(views.Count - remove_count, remove_count);
-
+#if UNITY_EDITOR
             MarkTime(1); // "prune views"
-
+#endif
             int view_count = views.Count;
 
             // Prune unused empty scenes
@@ -201,9 +213,10 @@ namespace FloatingOffset.Runtime
 
             // Initialize caches
             union.EnsureCapacity(view_count);
+#if UNITY_EDITOR
 
             MarkTime(2); // "prune unused empty scenes"
-
+#endif
             // Populate caches
             for (int i = 0; i < view_count; i++)
             {
@@ -217,9 +230,10 @@ namespace FloatingOffset.Runtime
                 union_sums[i] = Vector3d.zero;
                 scene_champions[i] = (-1, -1, -1);
             }
+#if UNITY_EDITOR
 
             MarkTime(3); // "populate caches"
-
+#endif
             for (int i = 0; i < view_count; i++)
             {
                 int rep = this.grid.AddToRepresentative(view_positions[i], i);
@@ -230,9 +244,9 @@ namespace FloatingOffset.Runtime
                 }
             }
 
-
+#if UNITY_EDITOR
             MarkTime(4); // add views to hash grid
-
+#endif
             // Populate union-find using hash grid
 
             for (int i = 0; i < view_count; i++)
@@ -243,8 +257,9 @@ namespace FloatingOffset.Runtime
                     union.Union(representative, i);
                 }
             }
+#if UNITY_EDITOR
             MarkTime(5); //populate union-find
-
+#endif
             // calculate union sums
 
             for (int i = 0; i < view_count; i++)
@@ -253,9 +268,9 @@ namespace FloatingOffset.Runtime
                 union_counts[rep]++;
                 union_sums[rep] += view_positions[i];
             }
-
+#if UNITY_EDITOR
             MarkTime(6); //calculate union sums
-
+#endif
             // Aggregate data for union_counts (how many members are in the union)
             // and union_sums (the total sum of positions in that union, used later to find the average)
             for (int i = 0; i < view_count; i++)
@@ -266,9 +281,9 @@ namespace FloatingOffset.Runtime
             }
 
             winners.Clear();
-
+#if UNITY_EDITOR
             MarkTime(7); // "aggregate data for each union"
-
+#endif
 
             // Select the best union champion for each scene
             // We could also do this by finding the scene that is closest to the average centroid of the given union.
@@ -284,9 +299,9 @@ namespace FloatingOffset.Runtime
                     scene_champions[sceneIdx] = (rep, count, i);
                 }
             }
-
+#if UNITY_EDITOR
             MarkTime(8); // "select best union champ"
-
+#endif
             // Map scene champions to winners dictionary
             for (int sceneIdx = 0; sceneIdx < scenes.Count; sceneIdx++)
             {
@@ -359,16 +374,17 @@ namespace FloatingOffset.Runtime
                     }
                 }
             }
-
+#if UNITY_EDITOR
             MarkTime(11); // "request scenes/transfers"
-
+#endif
             // Finalize scene transform updates
             for (int i = 0; i < scenes.Count; i++)
             {
                 handler.UpdateOffset(scenes.GetSceneAt(i));
             }
-
+#if UNITY_EDITOR
             MarkTime(12); // "finalize offset updates"
+#endif
         }
 
         /// <summary>

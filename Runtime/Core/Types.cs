@@ -92,18 +92,19 @@ namespace FloatingOffset.Runtime
             /// The runtime object, used for keying.
             /// </summary>
             /// <returns></returns>
-            object GetObject();
+            object GetEngineObject();
 
             /// <summary>
             /// Returns true if the game object associated with this offsettable exists, otherwise false.
             /// </summary>
             /// <returns></returns>
             bool IsValid();
+
             /// <summary>
-            /// Should this object be ignored in offset calculations?
+            /// A friendly display name to show for this object (useful for debugging)
             /// </summary>
             /// <returns></returns>
-            bool Ignore();
+            string GetName();
         }
         /// <summary>
         /// Exposes listeners for OnPreOffset which is called on subscribed objects in a scene about to be offset.

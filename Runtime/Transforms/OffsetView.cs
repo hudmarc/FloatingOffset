@@ -92,7 +92,7 @@ namespace FloatingOffset.Runtime
         bool IOffsetObject<Scene>.IsPlayer() => IsPlayer;
         public bool IsValid() => registered;
         public string GetName() => gameObject.name;
-        public object GetObject() => gameObject;
+        public object GetEngineObject() => gameObject;
         public bool Ignore() => false;
     }
 }

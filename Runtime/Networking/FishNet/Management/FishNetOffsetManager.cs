@@ -67,6 +67,8 @@ namespace FloatingOffset.Runtime.Example
 
         #endregion
 
+        private bool initialized;
+
         void Awake()
         {
             this.localOffsetState = new LocalUniverseState<Scene>(configuration.logging);
@@ -122,6 +124,8 @@ namespace FloatingOffset.Runtime.Example
                 networkManager.TimeManager.OnPrePhysicsSimulation -= networkServerOffsetManager.PhysicsTick;
                 InstanceFinder.SceneManager.OnLoadEnd -= networkServerOffsetManager.OnLoadEnd;
             }
+
+            initialized = true;
         }
         // Called on server and client
         private void OnClientStateChange(ClientConnectionStateArgs args)
@@ -137,6 +141,8 @@ namespace FloatingOffset.Runtime.Example
             {
                 networkManager.ClientManager.UnregisterBroadcast<ReceiveOffsetBroadcast>(OnClientReceivedOffset);
             }
+
+            initialized = true;
         }
         // client-side
         public void OnClientReceivedOffset(ReceiveOffsetBroadcast msg, Channel channel)
@@ -214,7 +220,7 @@ namespace FloatingOffset.Runtime.Example
         }
 
         public override Vector3d GetLocalOffset(Scene scene) => server == null ? localOffsetState.current_offset : offsetSceneState.GetOffset(scene);
-        public override void RegisterKeyed(ISceneKeyedObject<Scene> offsettable) => offsettableRegistry.RegisterOffsettable(offsettable);
+        public override void RegisterKeyed(ISceneKeyedObject<Scene> offsettable, bool ignore = false) => offsettableRegistry.RegisterOffsettable(offsettable, ignore);
         public override void UnregisterKeyed(ISceneKeyedObject<Scene> offsettable) => offsettableRegistry.UnregisterOffsettable(offsettable);
         public override void RegisterView(OffsetView offsetView)
         {
@@ -234,5 +240,7 @@ namespace FloatingOffset.Runtime.Example
         public override int CountActualViews() => offsetViewRegistry.CountViews();
 
         public override Scene GetNearbyScene(Vector3d position) => server.GetNearbyScene(position);
+
+        public override bool IsInitialized() => initialized;
     }
 }
